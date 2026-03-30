@@ -1,0 +1,466 @@
+(function() {
+const stripe = Stripe('pk_live_51Sz0bXERxTMJI9mnTsJdmBr1SCxSM8yWVJIDDFyZju38YuQsQ25bBWiGnQ6m4UeaMxHbbG2txpXiLoNmavsEDDCc007YEuzCxX');
+
+const PROJECTS = {
+  biggs: {
+    id:'biggs', name:'Biggs Residence', address:'5156 Piazza Place, El Dorado Hills, CA 95762',
+    type:'Downstairs Remodel', status:'In Progress — Near Completion',
+    overheadPct:0.04, profitPct:0.04, clients:['jeff_biggs','regina_biggs'],
+    timeline:[
+      {name:'Demo & Disposal',date:'Oct 2025',status:'done'},
+      {name:'Rough Plumbing & Electrical',date:'Nov 2025',status:'done'},
+      {name:'Drywall & Paint',date:'Dec 2025',status:'done'},
+      {name:'Cabinets & Countertops',date:'Jan–Feb 2026',status:'done'},
+      {name:'Hardwood Flooring',date:'Feb–Mar 2026',status:'current',note:'Material delivered, installation in progress'},
+      {name:'Appliances & Fixtures',date:'Apr 2026',status:'pending'},
+      {name:'Final Punch & Cleaning',date:'Apr 2026',status:'pending'}
+    ],
+    budget:[
+      {desc:'Demo/Disposal of floors & cabinets',budget:16450,paid:16450},
+      {desc:'Plumbing',budget:3200,paid:275},
+      {desc:'Electrical pre-wire & partial trim',budget:5000,paid:10000},
+      {desc:'Drywall repairs & texture',budget:0,paid:2500},
+      {desc:'Trim / Base / Crown',budget:6500,paid:0},
+      {desc:'Interior Paint',budget:15000,paid:7000},
+      {desc:'Cabinets',budget:58000,paid:55000},
+      {desc:'Bedrosian Slabs / Countertops',budget:14000,paid:10387.75},
+      {desc:'Hardwood Flooring material',budget:39700,paid:16943.69},
+      {desc:'Kitchen Appliances — Ferguson',budget:30000,paid:20972.22},
+      {desc:'Kitchen Plumbing — Ferguson',budget:0,paid:4763.53},
+      {desc:'Pottery Barn — Chandeliers & Sconces',budget:0,paid:5059.78},
+      {desc:'Steel door for office',budget:0,paid:1939},
+      {desc:'Ceiling fans',budget:0,paid:907.34},
+      {desc:'Pantry door — Wayfair',budget:0,paid:360},
+      {desc:'Decorative Ceiling Beams',budget:3000,paid:0},
+      {desc:'Finish Plumbing Fixtures',budget:1500,paid:0},
+      {desc:'Pantry Shelving',budget:2000,paid:0},
+      {desc:'Cleaning — Intermediate & Final',budget:1200,paid:0},
+      {desc:'Punch Work & Misc. Labor',budget:2500,paid:0}
+    ],
+    reimbursables:[{desc:'Lumens Exterior Lights x4 (Kevin paid)',amount:926.64}],
+    invoices:[
+      {id:'INV-BIGGS-001',desc:'Phase 1–4 Draw — Costs Incurred',sub:'Various Subs & Suppliers',amount:153484.95,opAmount:12278,reimbursable:926.64,total:166689.59,status:'paid',date:'Mar 9, 2026',paidDate:'Mar 12, 2026'}
+    ],
+    pendingInvoices:[
+      {id:'SUB-001',desc:'Hardwood Flooring Installation',sub:'Western Floors Co.',amount:8400,status:'pending-approval',date:'Mar 24, 2026'}
+    ],
+    messages:[
+      {from:'kevin',text:'Jeff & Regina — welcome to your SAM Custom Homes project portal! Everything about your project lives here.',time:'Oct 14, 2025',av:'KM'},
+      {from:'jeff',text:'This is great Kevin, really appreciate the transparency.',time:'Oct 14, 2025',av:'JB'},
+      {from:'kevin',text:'Cabinet delivery confirmed for Jan 8th. Crew starts installation Jan 10th.',time:'Jan 5, 2026',av:'KM'},
+      {from:'regina',text:'Perfect. Should we be there for the delivery?',time:'Jan 5, 2026',av:'RB'},
+      {from:'kevin',text:'Not necessary but you\'re welcome to come by. I\'ll be on site Jan 10th.',time:'Jan 5, 2026',av:'KM'},
+      {from:'kevin',text:'Hardwood flooring material arrived and looks beautiful. Installation crew starts Monday.',time:'Mar 20, 2026',av:'KM'},
+      {from:'jeff',text:'Excellent! Sent some inspiration photos for the kitchen island lighting — check the Photos tab.',time:'Mar 21, 2026',av:'JB'}
+    ],
+    tasks:[
+      {id:1,text:'Select final lighting fixtures for kitchen island',assign:'client',priority:'normal',done:false,due:'Apr 1, 2026'},
+      {id:2,text:'Confirm appliance delivery schedule with Ferguson',assign:'sam',priority:'urgent',done:false,due:'Mar 30, 2026'},
+      {id:3,text:'Submit final flooring installation invoice',assign:'sub',priority:'normal',done:false,due:'Apr 5, 2026'},
+      {id:4,text:'Schedule final walkthrough',assign:'sam',priority:'normal',done:false,due:'Apr 15, 2026'}
+    ],
+    photos:[
+      {type:'before',label:'Kitchen — Before Demo',icon:'🏚️'},
+      {type:'before',label:'Downstairs Living — Before',icon:'🏠'},
+      {type:'progress',label:'Demo Complete',icon:'🔨'},
+      {type:'progress',label:'Cabinets Installed',icon:'🪵'},
+      {type:'progress',label:'Hardwood Material Delivered',icon:'📦'},
+      {type:'inspiration',label:'Island Lighting Inspiration',icon:'💡'},
+      {type:'inspiration',label:'Hardware Finish Idea',icon:'🎨'},
+      {type:'completion',label:'Paint — Complete',icon:'🖌️'}
+    ],
+    docs:[
+      {name:'Original Budget — Oct 14, 2025',type:'xlsx',date:'Oct 14, 2025',icon:'📊'},
+      {name:'Invoice INV-BIGGS-001',type:'pdf',date:'Mar 9, 2026',icon:'📄'},
+      {name:'Ferguson Appliances Quote',type:'pdf',date:'Dec 2025',icon:'📄'}
+    ]
+  },
+  gibson: {
+    id:'gibson', name:'Gibson Residence', address:'3027 Orbatello Way, El Dorado Hills, CA 95762',
+    type:'Kitchen & Living Remodel', status:'In Progress',
+    overheadPct:0.04, profitPct:0.04, clients:['john_gibson'],
+    timeline:[
+      {name:'Demo — Floors, Baseboard, Kitchen, Bath',date:'Nov 2025',status:'done'},
+      {name:'Rough Plumbing & Electrical',date:'Dec 2025',status:'done'},
+      {name:'Drywall & Texture',date:'Jan 2026',status:'done'},
+      {name:'Cabinets & Pantry Build-Out',date:'Feb–Mar 2026',status:'current',note:'Cabinets ordered, delivery expected Apr 2'},
+      {name:'Countertops & Backsplash',date:'Apr 2026',status:'pending'},
+      {name:'Glass Wall/Door Installation',date:'Apr 2026',status:'pending'},
+      {name:'Paint — Interior & Exterior',date:'May 2026',status:'pending'},
+      {name:'Appliances & Finish Plumbing',date:'May 2026',status:'pending'},
+      {name:'Final Punch & Cleaning',date:'Jun 2026',status:'pending'}
+    ],
+    budget:[
+      {desc:'Demo — floors, baseboard, kitchen, bath',budget:13500,paid:13500},
+      {desc:'Rough Lumber & Hardware',budget:550,paid:550},
+      {desc:'Rough Carpentry / Framing',budget:450,paid:450},
+      {desc:'Plumbing',budget:1800,paid:1800},
+      {desc:'Electrical Wiring',budget:1600,paid:1600},
+      {desc:'Drywall',budget:1600,paid:1600},
+      {desc:'Trim / Base / Crown',budget:1200,paid:0},
+      {desc:'Pantry Build-Out',budget:2200,paid:0},
+      {desc:'Finish Carpentry',budget:1200,paid:0},
+      {desc:'Glass Wall / Door',budget:9000,paid:0},
+      {desc:'Exterior Door',budget:2000,paid:0},
+      {desc:'Painting — Exterior',budget:7500,paid:0},
+      {desc:'Painting — Interior',budget:10835,paid:0},
+      {desc:'Cabinets — Kitchen/Island/Bev Center',budget:35500,paid:17750},
+      {desc:'Countertops / Solid Surfaces / Backsplash',budget:14500,paid:0},
+      {desc:'Electrical Trim & Fixtures (TBD)',budget:4500,paid:0},
+      {desc:'Appliances — Fridge, Bev & Wine',budget:6500,paid:0},
+      {desc:'Finish Plumbing — Sinks, Toilet, Faucets',budget:3500,paid:0},
+      {desc:'Cleaning — Intermediate & Final',budget:600,paid:0},
+      {desc:'Punch Work & Misc. Labor',budget:1000,paid:0}
+    ],
+    reimbursables:[],
+    invoices:[
+      {id:'INV-GIB-001',desc:'Phase 1–2 Draw — Demo & Rough Work',sub:'Various',amount:19500,opAmount:1560,reimbursable:0,total:21060,status:'paid',date:'Dec 15, 2025',paidDate:'Dec 18, 2025'},
+      {id:'INV-GIB-002',desc:'Cabinet Deposit — 50%',sub:'Elite Cabinetry',amount:17750,opAmount:1420,reimbursable:0,total:19170,status:'due',date:'Mar 1, 2026'}
+    ],
+    pendingInvoices:[],
+    messages:[
+      {from:'kevin',text:'John — your project portal is live! Budget, timeline, and all communications will be tracked here.',time:'Nov 13, 2025',av:'KM'},
+      {from:'john',text:'Great setup Kevin. Really like being able to see everything in one place.',time:'Nov 13, 2025',av:'JG'},
+      {from:'kevin',text:'Demo went smoothly. Site is clean and ready for rough work next week.',time:'Nov 20, 2025',av:'KM'},
+      {from:'kevin',text:'Cabinet order placed with Elite Cabinetry. Estimated delivery April 2nd. Deposit invoice coming.',time:'Feb 28, 2026',av:'KM'},
+      {from:'john',text:'Sounds good. Will the portal notify me when the invoice is ready?',time:'Feb 28, 2026',av:'JG'},
+      {from:'kevin',text:'Yes — you\'ll get a text and email the moment it\'s ready to pay.',time:'Feb 28, 2026',av:'KM'}
+    ],
+    tasks:[
+      {id:1,text:'Approve cabinet deposit invoice INV-GIB-002',assign:'client',priority:'urgent',done:false,due:'Mar 28, 2026'},
+      {id:2,text:'Confirm countertop material selection',assign:'client',priority:'normal',done:false,due:'Apr 5, 2026'},
+      {id:3,text:'Schedule glass wall measurement appointment',assign:'sam',priority:'normal',done:false,due:'Apr 1, 2026'}
+    ],
+    photos:[
+      {type:'before',label:'Kitchen — Before',icon:'🏚️'},
+      {type:'before',label:'Living Area — Before',icon:'🏠'},
+      {type:'progress',label:'Demo — Day 1',icon:'🔨'},
+      {type:'progress',label:'Rough Plumbing Complete',icon:'🔧'},
+      {type:'inspiration',label:'Kitchen Design Inspiration',icon:'✨'},
+      {type:'inspiration',label:'Cabinet Style Reference',icon:'🪵'}
+    ],
+    docs:[
+      {name:'Budget — Nov 13, 2025',type:'xlsx',date:'Nov 13, 2025',icon:'📊'},
+      {name:'Invoice INV-GIB-001',type:'pdf',date:'Dec 15, 2025',icon:'📄'},
+      {name:'Invoice INV-GIB-002',type:'pdf',date:'Mar 1, 2026',icon:'📄'},
+      {name:'Elite Cabinetry Order Confirmation',type:'pdf',date:'Feb 28, 2026',icon:'📄'}
+    ]
+  }
+};
+
+const USERS = {
+  kevin:{name:'Kevin Manzer',first:'Kevin',role:'SAM — Owner',initials:'KM',project:null,isAdmin:true},
+  jeff_biggs:{name:'Jeff Biggs',first:'Jeff',role:'Client',initials:'JB',project:'biggs',phone:'408-891-1731',email:'jeffrey.biggs@gmail.com'},
+  regina_biggs:{name:'Regina Biggs',first:'Regina',role:'Client',initials:'RB',project:'biggs',phone:'510-825-9942',email:'regina.biggs@nadel.com'},
+  john_gibson:{name:'John Gibson',first:'John',role:'Client',initials:'JG',project:'gibson',phone:'916-337-8160',email:'jgibson43@yahoo.com'}
+};
+
+let currentUser=null, currentProject=null, taskFilter='all', pendingInvoiceId=null;
+let currentPayAmount=0, sigDrawing=false, sigHasMark=false, sigCtx=null;
+
+function quickLogin(role){
+  const map={kevin:'kevin@samcustomhomes.com',biggs:'jeffrey.biggs@gmail.com',gibson:'jgibson43@yahoo.com'};
+  document.getElementById('li-email').value=map[role];
+  document.getElementById('li-pass').value='••••••••';
+}
+
+function doLogin(){
+  const email=document.getElementById('li-email').value.toLowerCase();
+  let uid='kevin';
+  if(email.includes('jeffrey')||email.includes('jeff'))uid='jeff_biggs';
+  else if(email.includes('regina'))uid='regina_biggs';
+  else if(email.includes('gibson')||email.includes('john'))uid='john_gibson';
+  else if(email.includes('kevin')||email.includes('sam'))uid='kevin';
+  loadApp(uid);
+}
+
+function loadApp(uid){
+  currentUser=USERS[uid];
+  currentProject=currentUser.isAdmin?PROJECTS.biggs:PROJECTS[currentUser.project];
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.getElementById('user-av').textContent=currentUser.initials;
+  document.getElementById('user-name').textContent=currentUser.name;
+  document.getElementById('user-role').textContent=currentUser.role;
+  document.getElementById('greet-name').textContent=currentUser.first;
+  document.getElementById('topbar-date').textContent=new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
+  const hr=new Date().getHours();
+  document.getElementById('time-greet').textContent=hr<12?'morning':hr<17?'afternoon':'evening';
+  document.querySelectorAll('.sam-only').forEach(el=>el.style.display=currentUser.isAdmin?'flex':'none');
+  document.querySelectorAll('.sam-only-btn').forEach(el=>el.style.display=currentUser.isAdmin?'block':'none');
+  loadProject(currentProject);
+  goTo('dashboard',document.querySelector('.nav-item[data-page="dashboard"]'));
+}
+
+function loadProject(proj){
+  currentProject=proj;
+  document.getElementById('proj-name').textContent=proj.name;
+  document.getElementById('proj-status').textContent=proj.status;
+  document.getElementById('msg-project-name').textContent=proj.name;
+  renderAll();
+}
+
+function doLogout(){
+  document.getElementById('app').style.display='none';
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('li-email').value='';
+  document.getElementById('li-pass').value='';
+}
+
+function goTo(page,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  if(el)el.classList.add('active');
+  else document.querySelector('.nav-item[data-page="'+page+'"]')?.classList.add('active');
+  const titles={dashboard:'Dashboard',messages:'Messages',tasks:'Tasks',timeline:'Timeline',budget:'Budget & Scope',invoices:'Invoices & Payments',photos:'Photos',documents:'Documents',agreement:'Consulting Agreement'};
+  document.getElementById('page-title').textContent=titles[page]||page;
+  if(page==='messages')document.getElementById('msg-badge').style.display='none';
+  if(page==='invoices')document.getElementById('inv-dot').style.display='none';
+  closeSidebar();
+}
+
+function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('sb-overlay').classList.toggle('open');}
+function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('sb-overlay').classList.remove('open');}
+function showProjectSwitcher(){if(!currentUser.isAdmin)return;const next=currentProject.id==='biggs'?'gibson':'biggs';loadProject(PROJECTS[next]);showToast('Project Switched','Now viewing: '+PROJECTS[next].name);}
+
+function renderAll(){renderDashboard();renderMessages();renderTasks('all');renderTimeline();renderBudget();renderInvoices();renderPhotos('all');renderDocuments();renderAgreement();}
+
+function fmt(n){if(!n&&n!==0)return '—';return '$'+Number(n).toLocaleString('en-US',{minimumFractionDigits:n%1!==0?2:0,maximumFractionDigits:2});}
+
+function renderDashboard(){
+  const p=currentProject;
+  const totalBudget=p.budget.reduce((s,r)=>s+(r.budget||0),0);
+  const totalPaid=p.budget.reduce((s,r)=>s+(r.paid||0),0);
+  const totalOP=totalPaid*(p.overheadPct+p.profitPct);
+  const reimbTotal=p.reimbursables.reduce((s,r)=>s+r.amount,0);
+  const donePct=p.timeline.filter(t=>t.status==='done').length/p.timeline.length;
+  document.getElementById('kpi-row').innerHTML=`
+    <div class="kpi"><div class="kpi-label">Project Budget</div><div class="kpi-value">${fmt(totalBudget||totalPaid*1.3)}</div><div class="kpi-sub">${p.type}</div></div>
+    <div class="kpi"><div class="kpi-label">Total Paid to Date</div><div class="kpi-value" style="color:var(--gold)">${fmt(totalPaid)}</div><div class="kpi-sub">Sub & supplier costs</div></div>
+    <div class="kpi"><div class="kpi-label">SAM Fee (8%)</div><div class="kpi-value" style="font-size:20px;">${fmt(totalOP+reimbTotal)}</div><div class="kpi-sub">4% overhead + 4% profit</div></div>
+    <div class="kpi"><div class="kpi-label">Progress</div><div class="kpi-value" style="font-size:20px;">${Math.round(donePct*100)}%</div><div class="kpi-sub">Phase ${p.timeline.filter(t=>t.status==='done').length} of ${p.timeline.length}</div></div>`;
+  const tlHtml=p.timeline.slice(0,5).map(t=>`<div class="tl-item"><div class="tl-dot ${t.status==='done'?'done':t.status==='current'?'current':''}"></div><div><div class="tl-name">${t.name}</div><div class="tl-date">${t.date}</div><span class="status-chip ${t.status==='done'?'chip-done':t.status==='current'?'chip-active':'chip-pending'}">${t.status==='done'?'Complete':t.status==='current'?'In Progress':'Upcoming'}</span></div></div>`).join('');
+  document.getElementById('dash-timeline').innerHTML=`<div class="prog-wrap"><div class="prog-label"><span>Overall Progress</span><span>${Math.round(donePct*100)}% Complete</span></div><div class="prog-bar"><div class="prog-fill" style="width:${Math.round(donePct*100)}%"></div></div></div><div>${tlHtml}</div>`;
+  const msgs=p.messages.slice(-3);
+  document.getElementById('dash-msgs').innerHTML=`<div class="msg-list">${msgs.map(m=>{const isMe=currentUser.isAdmin?m.from==='kevin':m.from!=='kevin';return`<div class="msg ${isMe?'mine':''}"><div class="msg-av">${m.av}</div><div><div class="msg-bubble">${m.text}</div><div class="msg-time">${m.time}</div></div></div>`;}).join('')}</div>`;
+  const openTasks=p.tasks.filter(t=>!t.done).slice(0,3);
+  document.getElementById('dash-tasks').innerHTML=openTasks.map(t=>`<div class="task-row"><div class="task-cb ${t.done?'done':''}" onclick="toggleTask(${t.id})">${t.done?'✓':''}</div><div><div class="task-text ${t.done?'done':''}">${t.text}</div><div><span class="tag tag-${t.assign}">${t.assign==='client'?'Client':t.assign==='sam'?'SAM':'Sub'}</span>${t.priority==='urgent'?'<span class="tag tag-urgent">Urgent</span>':''}<span style="font-size:10px;color:var(--muted);">Due ${t.due}</span></div></div></div>`).join('')||'<div class="empty"><div class="ei">☑</div><p>All tasks complete</p></div>';
+  document.getElementById('dash-activity').innerHTML=`<div class="task-row"><div style="font-size:18px;margin-right:4px;">💬</div><div><div style="font-size:12px;color:var(--text);">New message from ${p.messages[p.messages.length-1].av}</div><div style="font-size:10px;color:var(--muted);">${p.messages[p.messages.length-1].time}</div></div></div>${p.pendingInvoices.length?'<div class="task-row"><div style="font-size:18px;margin-right:4px;">📋</div><div><div style="font-size:12px;color:var(--gold);">Sub invoice pending your approval</div><div style="font-size:10px;color:var(--muted);">Requires review before client notification</div></div></div>':''}<div class="task-row"><div style="font-size:18px;margin-right:4px;">📸</div><div><div style="font-size:12px;color:var(--text);">New photos uploaded</div><div style="font-size:10px;color:var(--muted);">Progress update</div></div></div>`;
+}
+
+function renderMessages(){
+  const p=currentProject;
+  document.getElementById('msg-thread').innerHTML=`<div class="msg-list">${p.messages.map(m=>{const isMe=currentUser.isAdmin?m.from==='kevin':m.from!=='kevin';return`<div class="msg ${isMe?'mine':''}"><div class="msg-av">${m.av}</div><div><div class="msg-bubble">${m.text}</div><div class="msg-time">${m.av} · ${m.time}</div></div></div>`;}).join('')}</div>`;
+  document.getElementById('msg-thread').scrollTop=999999;
+}
+
+function sendMsg(){
+  const input=document.getElementById('msg-input');
+  const text=input.value.trim();
+  if(!text)return;
+  currentProject.messages.push({from:currentUser.isAdmin?'kevin':'client',text,time:'Just now',av:currentUser.initials});
+  renderMessages();
+  input.value='';
+}
+
+function msgKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();}}
+
+function renderTasks(filter){
+  taskFilter=filter;
+  const filtered=currentProject.tasks.filter(t=>filter==='all'||t.assign===filter);
+  document.getElementById('task-list').innerHTML=filtered.length?filtered.map(t=>`<div class="task-row"><div class="task-cb ${t.done?'done':''}" onclick="toggleTask(${t.id})">${t.done?'✓':''}</div><div style="flex:1;"><div class="task-text ${t.done?'done':''}">${t.text}</div><div><span class="tag tag-${t.assign}">${t.assign==='client'?'Client':t.assign==='sam'?'SAM':'Subcontractor'}</span>${t.priority==='urgent'?'<span class="tag tag-urgent">Urgent</span>':''}<span style="font-size:10px;color:var(--muted);margin-left:4px;">Due ${t.due}</span></div></div></div>`).join(''):'<div class="empty"><div class="ei">☑</div><p>No tasks in this category</p></div>';
+  document.getElementById('task-badge').textContent=currentProject.tasks.filter(t=>!t.done).length;
+}
+
+function toggleTask(id){const t=currentProject.tasks.find(x=>x.id===id);if(t){t.done=!t.done;renderTasks(taskFilter);renderDashboard();}}
+function filterTasks(f,btn){document.querySelectorAll('#page-tasks .tab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderTasks(f);}
+function openNewTask(){openModal('task-modal');}
+function createTask(){
+  const text=document.getElementById('new-task-text').value.trim();
+  if(!text)return;
+  currentProject.tasks.push({id:Date.now(),text,assign:document.getElementById('new-task-assign').value,priority:document.getElementById('new-task-priority').value,done:false,due:document.getElementById('new-task-due').value||'TBD'});
+  closeModal('task-modal');
+  renderTasks(taskFilter);
+  document.getElementById('new-task-text').value='';
+}
+
+function renderTimeline(){
+  const p=currentProject;
+  const done=p.timeline.filter(t=>t.status==='done').length;
+  const pct=Math.round(done/p.timeline.length*100);
+  document.getElementById('full-timeline').innerHTML=`<div class="prog-wrap" style="margin-bottom:24px;"><div class="prog-label"><span>Overall Progress</span><span>${pct}% — Phase ${done} of ${p.timeline.length}</span></div><div class="prog-bar"><div class="prog-fill" style="width:${pct}%"></div></div></div><div>${p.timeline.map((t,i)=>`<div class="tl-item"><div class="tl-dot ${t.status==='done'?'done':t.status==='current'?'current':''}"></div><div><div class="tl-name" style="font-size:14px;">${i+1}. ${t.name}</div><div class="tl-date">${t.date}</div><span class="status-chip ${t.status==='done'?'chip-done':t.status==='current'?'chip-active':'chip-pending'}">${t.status==='done'?'Complete':t.status==='current'?'In Progress':'Upcoming'}</span>${t.note?`<div style="font-size:11px;color:var(--muted);margin-top:5px;">${t.note}</div>`:''}</div></div>`).join('')}</div>`;
+}
+
+function renderBudget(){
+  const p=currentProject;
+  const rows=p.budget.filter(r=>r.budget>0||r.paid>0);
+  const totalBudget=rows.reduce((s,r)=>s+(r.budget||0),0);
+  const totalPaid=rows.reduce((s,r)=>s+(r.paid||0),0);
+  const totalOH=totalPaid*p.overheadPct;
+  const totalProfit=totalPaid*p.profitPct;
+  const reimbTotal=p.reimbursables.reduce((s,r)=>s+r.amount,0);
+  document.getElementById('budget-kpi').innerHTML=`<div class="bkpi"><div class="bkpi-amount">${fmt(totalBudget||totalPaid)}</div><div class="bkpi-label">Total Budget</div></div><div class="bkpi"><div class="bkpi-amount" style="color:var(--gold)">${fmt(totalPaid)}</div><div class="bkpi-label">Paid to Date</div></div><div class="bkpi"><div class="bkpi-amount" style="color:#6dbf8a">${fmt(totalOH+totalProfit+reimbTotal)}</div><div class="bkpi-label">SAM Consulting Fee</div></div>`;
+  document.getElementById('op-row').innerHTML=`<div class="op-chip">Overhead 4% = ${fmt(totalOH)}</div><div class="op-chip">Profit 4% = ${fmt(totalProfit)}</div>${reimbTotal>0?`<div class="op-chip">Reimbursables: ${fmt(reimbTotal)}</div>`:''}<div class="op-chip" style="background:rgba(74,148,100,0.15);border-color:rgba(74,148,100,0.3);color:#6dbf8a;">Total Fee: ${fmt(totalOH+totalProfit+reimbTotal)}</div>`;
+  document.getElementById('budget-rows').innerHTML=rows.map(r=>{const bal=(r.budget||0)-(r.paid||0);const oh=r.paid*p.overheadPct;const pr=r.paid*p.profitPct;const over=r.budget>0&&r.paid>r.budget;return`<tr ${over?'style="background:rgba(154,48,48,0.05)"':''}><td>${r.desc}${over?'<span style="font-size:9px;color:#d08080;margin-left:6px;">▲ Over budget</span>':''}</td><td class="amt">${r.budget>0?fmt(r.budget):'—'}</td><td class="amt ${r.paid>0?'amt-gold':''}">${r.paid>0?fmt(r.paid):'—'}</td><td class="amt">${r.budget>0?fmt(bal):'—'}</td><td class="amt" style="font-size:12px;">${r.paid>0?fmt(oh):'—'}</td><td class="amt" style="font-size:12px;">${r.paid>0?fmt(pr):'—'}</td></tr>`;}).join('')+`<tr style="border-top:2px solid var(--border2);"><td style="font-weight:500;color:var(--white);">TOTALS</td><td class="amt amt-gold">${fmt(totalBudget)}</td><td class="amt amt-gold">${fmt(totalPaid)}</td><td class="amt">${fmt(totalBudget-totalPaid)}</td><td class="amt" style="color:#6dbf8a;">${fmt(totalOH)}</td><td class="amt" style="color:#6dbf8a;">${fmt(totalProfit)}</td></tr>${reimbTotal>0?`<tr><td colspan="6"><div class="reimbursable-note">+ Reimbursables: ${p.reimbursables.map(r=>r.desc+' — '+fmt(r.amount)).join(', ')} = ${fmt(reimbTotal)}</div></td></tr>`:''}`;
+}
+
+function renderInvoices(){
+  const p=currentProject;
+  let html='';
+  if(currentUser.isAdmin&&p.pendingInvoices.length){
+    html+=`<div style="margin-bottom:20px;"><div class="sec-title">⚠️ Pending Your Approval</div>${p.pendingInvoices.map(inv=>`<div class="invoice-item pending-approval"><div class="inv-top"><div><div class="inv-num">${inv.id}</div><div class="inv-desc">${inv.desc}</div><div class="inv-sub-info">Submitted by: ${inv.sub} · ${inv.date}</div></div><div class="inv-amount">${fmt(inv.amount)}</div></div><div class="inv-footer"><span class="pill pill-review">Awaiting Your Review</span><div style="display:flex;gap:8px;"><button class="btn btn-green btn-sm" onclick="openApproveModal('${inv.id}','${fmt(inv.amount)}','${inv.desc}')">Review & Approve</button></div></div></div>`).join('')}</div>`;
+  }
+  html+=`<div class="sec-title">Invoice History</div>`;
+  html+=[...p.invoices].reverse().map(inv=>`<div class="invoice-item"><div class="inv-top"><div><div class="inv-num">${inv.id}</div><div class="inv-desc">${inv.desc}</div><div class="inv-sub-info">${inv.date}${inv.paidDate?' · Paid '+inv.paidDate:''}</div></div><div><div class="inv-amount">${fmt(inv.total)}</div><div style="font-size:10px;color:var(--muted);text-align:right;margin-top:2px;">incl. SAM fee ${fmt(inv.opAmount)}</div></div></div><div class="inv-footer"><span class="pill pill-${inv.status}">${inv.status==='paid'?'Paid · '+inv.paidDate:inv.status==='due'?'Payment Due':'Pending'}</span><div style="display:flex;gap:8px;align-items:center;">${inv.status==='due'&&!currentUser.isAdmin?`<button class="btn btn-gold btn-sm" onclick="openPayModal('${fmt(inv.total)}','${inv.desc}')">Pay Now</button>`:''}<button class="btn btn-outline btn-sm">View PDF</button></div></div></div>`).join('');
+  document.getElementById('invoice-list').innerHTML=html;
+}
+
+function renderPhotos(filter){
+  const photos=filter==='all'?currentProject.photos:currentProject.photos.filter(ph=>ph.type===filter);
+  const tagClass={before:'tag-before',after:'tag-after',progress:'tag-progress',inspiration:'tag-inspiration',concern:'tag-concern',completion:'tag-completion'};
+  document.getElementById('photo-grid').innerHTML=photos.length?photos.map(ph=>`<div class="photo-card">${ph.icon}<span class="photo-type-tag ${tagClass[ph.type]}">${ph.type}</span><div class="photo-card-label">${ph.label}</div></div>`).join(''):'<div class="empty" style="grid-column:1/-1"><div class="ei">📷</div><p>No photos in this category yet</p></div>';
+}
+
+function filterPhotos(filter,btn){document.querySelectorAll('.photo-type-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderPhotos(filter);}
+
+function renderDocuments(){
+  document.getElementById('doc-list').innerHTML=`<div class="sec-title">Project Documents</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;">${currentProject.docs.map(d=>`<div style="padding:16px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;transition:border-color 0.2s;" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='var(--border)'"><div style="font-size:26px;margin-bottom:8px;">${d.icon}</div><div style="font-size:12px;color:var(--white);margin-bottom:3px;">${d.name}</div><div style="font-size:10px;color:var(--muted);">${d.type.toUpperCase()} · ${d.date}</div></div>`).join('')}</div>`;
+}
+
+function renderAgreement(){
+  const p=currentProject;
+  const clientName=p.id==='biggs'?'Jeff & Regina Biggs':'John Gibson';
+  document.getElementById('agreement-doc').innerHTML=`<h3>SAM Custom Homes, Inc. — Consulting Agreement</h3><p>This Agreement is between <strong>${clientName}</strong> ("Owner") and SAM Custom Homes, Inc., Lic# 1133051 ("Consultant"), 11409 White Rock Road, Rancho Cordova, CA 95742.</p><p><strong>Property:</strong> ${p.address}</p><p><strong>Project:</strong> ${p.type}</p><h4>Scope of Services</h4><p>Consultant shall provide construction consulting services including: project planning, scheduling, budgeting; coordinating with contractors and suppliers; permit coordination; progress reporting; quality monitoring; change order review; and periodic updates to Owner.</p><h4>Compensation</h4><p>Fee Type: <strong>Percentage of Costs</strong><br>Overhead: <strong>4%</strong> of all actual costs<br>Profit: <strong>4%</strong> of all actual costs<br>Change Order Rate: <strong>4% + 4%</strong><br>Retainer: <strong>$0</strong></p><h4>Payment Terms</h4><p>All invoices due upon receipt. Late payments accrue 10% monthly interest. All contracts with subcontractors and suppliers are directly between Owner and the applicable party. Consultant does not pay subcontractors.</p><h4>Limitations</h4><p>Consultant shall not provide design, engineering, or legal services, and shall not perform construction work or hire subcontractors.</p><h4>Term & Termination</h4><p>Effective upon signing. Either party may terminate upon 30 days written notice. All earned fees are due upon termination.</p><h4>Governing Law</h4><p>State of California. Date: March 26, 2026</p>`;
+  setTimeout(()=>{
+    const canvas=document.getElementById('sig-canvas');
+    if(canvas&&!sigCtx){
+      sigCtx=canvas.getContext('2d');
+      sigCtx.strokeStyle='#c9a84c';sigCtx.lineWidth=2;sigCtx.lineCap='round';sigCtx.lineJoin='round';
+      const getPos=(e)=>{const rect=canvas.getBoundingClientRect();const sx=canvas.width/rect.width;const sy=canvas.height/rect.height;const src=e.touches?e.touches[0]:e;return{x:(src.clientX-rect.left)*sx,y:(src.clientY-rect.top)*sy};};
+      canvas.addEventListener('mousedown',e=>{sigDrawing=true;sigCtx.beginPath();const p=getPos(e);sigCtx.moveTo(p.x,p.y);});
+      canvas.addEventListener('mousemove',e=>{if(!sigDrawing)return;const p=getPos(e);sigCtx.lineTo(p.x,p.y);sigCtx.stroke();sigHasMark=true;});
+      canvas.addEventListener('mouseup',()=>sigDrawing=false);
+      canvas.addEventListener('mouseleave',()=>sigDrawing=false);
+      canvas.addEventListener('touchstart',e=>{e.preventDefault();sigDrawing=true;sigCtx.beginPath();const p=getPos(e);sigCtx.moveTo(p.x,p.y);},{passive:false});
+      canvas.addEventListener('touchmove',e=>{e.preventDefault();if(!sigDrawing)return;const p=getPos(e);sigCtx.lineTo(p.x,p.y);sigCtx.stroke();sigHasMark=true;},{passive:false});
+      canvas.addEventListener('touchend',()=>sigDrawing=false);
+    }
+  },200);
+}
+
+function clearSig(){if(sigCtx){sigCtx.clearRect(0,0,900,90);sigHasMark=false;}}
+function submitSig(){
+  if(!sigHasMark){alert('Please draw your signature first.');return;}
+  const d=new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+  document.getElementById('sig-date-display').textContent=d;
+  document.getElementById('signed-confirm').style.display='flex';
+  document.getElementById('sig-section').style.display='none';
+  showToast('Agreement Signed','Signed electronically on '+d);
+}
+
+function openPayModal(amount,desc){
+  currentPayAmount=parseFloat(amount.replace(/[$,]/g,''))||0;
+  document.getElementById('pay-amount').textContent=amount;
+  document.getElementById('pay-desc').textContent=desc;
+  document.querySelectorAll('#pay-modal .tab').forEach(b=>b.classList.remove('active'));
+  document.querySelector('#pay-modal .tab').classList.add('active');
+  ['card','ach','invoice'].forEach(t=>document.getElementById('pt-'+t).style.display=t==='card'?'block':'none');
+  updateFeeDisplay('card');
+  openModal('pay-modal');
+}
+
+function updateFeeDisplay(tab){
+  document.getElementById('fee-base').textContent=fmt(currentPayAmount);
+  const feeLine=document.getElementById('fee-line');
+  if(tab==='card'){
+    const fee=currentPayAmount*0.03;
+    feeLine.style.display='flex';
+    document.getElementById('fee-label').textContent='Credit card processing fee (3%)';
+    document.getElementById('fee-amount').textContent='+'+fmt(fee);
+    document.getElementById('fee-total').textContent=fmt(currentPayAmount+fee);
+    document.getElementById('fee-note').innerHTML='💡 Pay by <strong style="color:var(--gold)">ACH bank transfer</strong> to avoid the processing fee.';
+  } else if(tab==='ach'){
+    feeLine.style.display='flex';
+    document.getElementById('fee-label').textContent='ACH processing fee (flat)';
+    document.getElementById('fee-amount').textContent='+'+fmt(5);
+    document.getElementById('fee-total').textContent=fmt(currentPayAmount+5);
+    document.getElementById('fee-note').textContent='💡 ACH is the most cost-effective option for large payments.';
+  } else {
+    feeLine.style.display='none';
+    document.getElementById('fee-total').textContent=fmt(currentPayAmount);
+    document.getElementById('fee-note').textContent='';
+  }
+}
+
+function switchPayTab(tab,btn){
+  document.querySelectorAll('#pay-modal .tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  ['card','ach','invoice'].forEach(t=>document.getElementById('pt-'+t).style.display=t===tab?'block':'none');
+  updateFeeDisplay(tab);
+}
+
+function processPayment(){closeModal('pay-modal');showSuccess('Payment Submitted','Your payment has been received. A confirmation will be sent to your email.');simulateTwilio('Payment Received','SAM Custom Homes: Your payment has been received. Thank you — Kevin @ SAM Custom Homes');}
+
+function openApproveModal(id,amount,desc){
+  pendingInvoiceId=id;
+  document.getElementById('approve-amount').textContent=amount;
+  document.getElementById('approve-desc').textContent=desc;
+  openModal('approve-modal');
+}
+
+function approveInvoice(){
+  closeModal('approve-modal');
+  const inv=currentProject.pendingInvoices.find(i=>i.id===pendingInvoiceId);
+  if(inv){
+    const opAmount=inv.amount*(currentProject.overheadPct+currentProject.profitPct);
+    currentProject.invoices.push({id:inv.id,desc:inv.desc,sub:inv.sub,amount:inv.amount,opAmount:opAmount,reimbursable:0,total:inv.amount+opAmount,status:'due',date:new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})});
+    currentProject.pendingInvoices=currentProject.pendingInvoices.filter(i=>i.id!==pendingInvoiceId);
+  }
+  renderInvoices();
+  showSuccess('Invoice Approved','Client notified via text and email. Your consulting fee has been calculated automatically.');
+  simulateTwilio('Invoice Ready','SAM Custom Homes: A new invoice is ready for payment in your project portal.');
+}
+
+function rejectInvoice(){closeModal('approve-modal');showToast('Invoice Rejected','The subcontractor has been notified to resubmit.');}
+function openAddInvoice(){showToast('Add Invoice','Full invoice creation — coming in next build session.');}
+function uploadPhoto(){showSuccess('Photo Uploaded','Your photo has been added to the project gallery.');}
+function uploadDoc(){showSuccess('Document Uploaded','Your document has been saved successfully.');}
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+function showSuccess(title,body){document.getElementById('success-title').textContent=title;document.getElementById('success-body').textContent=body;document.getElementById('success-icon').textContent='✓';openModal('success-modal');}
+function simulateTwilio(title,msg){setTimeout(()=>showToast('📱 '+title,msg),1200);}
+function showToast(title,body){const t=document.getElementById('toast');document.getElementById('toast-title').textContent=title;document.getElementById('toast-body').textContent=body;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),4000);}
+
+document.getElementById('topbar-date').textContent=new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
+
+// Expose all functions globally
+window.quickLogin=quickLogin;
+window.doLogin=doLogin;
+window.doLogout=doLogout;
+window.goTo=goTo;
+window.toggleSidebar=toggleSidebar;
+window.closeSidebar=closeSidebar;
+window.sendMsg=sendMsg;
+window.msgKey=msgKey;
+window.filterTasks=filterTasks;
+window.toggleTask=toggleTask;
+window.openNewTask=openNewTask;
+window.createTask=createTask;
+window.openPayModal=openPayModal;
+window.updateFeeDisplay=updateFeeDisplay;
+window.switchPayTab=switchPayTab;
+window.processPayment=processPayment;
+window.openApproveModal=openApproveModal;
+window.approveInvoice=approveInvoice;
+window.rejectInvoice=rejectInvoice;
+window.filterPhotos=filterPhotos;
+window.uploadPhoto=uploadPhoto;
+window.uploadDoc=uploadDoc;
+window.clearSig=clearSig;
+window.submitSig=submitSig;
+window.openModal=openModal;
+window.closeModal=closeModal;
+window.showProjectSwitcher=showProjectSwitcher;
+window.openAddInvoice=openAddInvoice;
+})();
