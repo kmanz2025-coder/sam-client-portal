@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -459,6 +460,7 @@ select option{background:var(--surface2)}
 <div class="notif-toast" id="toast"><div class="toast-title" id="toast-title">Notification</div><div class="toast-body" id="toast-body">—</div></div>
 
 <script>
+(function(){
 const stripe = Stripe('pk_live_51Sz0bXERxTMJI9mnTsJdmBr1SCxSM8yWVJIDDFyZju38YuQsQ25bBWiGnQ6m4UeaMxHbbG2txpXiLoNmavsEDDCc007YEuzCxX');
 
 const PROJECTS = {
@@ -893,6 +895,20 @@ function simulateTwilio(title,msg){setTimeout(()=>showToast('📱 '+title,msg),1
 function showToast(title,body){const t=document.getElementById('toast');document.getElementById('toast-title').textContent=title;document.getElementById('toast-body').textContent=body;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),4000);}
 
 document.getElementById('topbar-date').textContent=new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
-</script>
+
+window.quickLogin=quickLogin;window.doLogin=doLogin;window.doLogout=doLogout;
+window.goTo=goTo;window.toggleSidebar=toggleSidebar;window.closeSidebar=closeSidebar;
+window.sendMsg=sendMsg;window.msgKey=msgKey;window.filterTasks=filterTasks;
+window.toggleTask=toggleTask;window.openNewTask=openNewTask;window.createTask=createTask;
+window.openPayModal=openPayModal;window.updateFeeDisplay=updateFeeDisplay;
+window.switchPayTab=switchPayTab;window.processPayment=processPayment;
+window.openApproveModal=openApproveModal;window.approveInvoice=approveInvoice;
+window.rejectInvoice=rejectInvoice;window.filterPhotos=filterPhotos;
+window.uploadPhoto=uploadPhoto;window.uploadDoc=uploadDoc;
+window.clearSig=clearSig;window.submitSig=submitSig;
+window.openModal=openModal;window.closeModal=closeModal;
+window.showProjectSwitcher=showProjectSwitcher;window.openAddInvoice=openAddInvoice;
+})();
+
 </body>
 </html>
