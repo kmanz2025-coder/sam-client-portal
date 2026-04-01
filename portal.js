@@ -725,7 +725,7 @@ function showToast(title,body){const t=document.getElementById('toast');document
 document.getElementById('topbar-date').textContent=new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
 
 // ── EVENT LISTENERS (no inline onclick needed) ──
-document.addEventListener('DOMContentLoaded',function(){
+function wireEvents(){
   document.querySelectorAll('[data-login]').forEach(function(btn){
     btn.addEventListener('click',function(){quickLogin(this.getAttribute('data-login'));});
   });
@@ -735,4 +735,10 @@ document.addEventListener('DOMContentLoaded',function(){
   if(lo)lo.addEventListener('click',doLogout);
   var lp=document.getElementById('li-pass');
   if(lp)lp.addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
-});
+}
+
+if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded', wireEvents);
+} else {
+  wireEvents();
+}
