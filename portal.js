@@ -223,10 +223,11 @@ function goTo(page,el){
   document.getElementById('page-'+page).classList.add('active');
   if(el)el.classList.add('active');
   else document.querySelector('.nav-item[data-page="'+page+'"]')?.classList.add('active');
-  const titles={dashboard:'Dashboard',messages:'Messages',tasks:'Tasks',timeline:'Timeline',budget:'Budget & Scope',invoices:'Invoices & Payments',photos:'Photos',documents:'Documents',agreement:'Consulting Agreement'};
+  const titles={dashboard:'Dashboard',projects:'Projects',messages:'Messages',tasks:'Tasks',timeline:'Timeline',budget:'Budget & Scope',invoices:'Invoices & Payments',photos:'Photos',documents:'Documents',agreement:'Consulting Agreement'};
   document.getElementById('page-title').textContent=titles[page]||page;
   if(page==='messages')document.getElementById('msg-badge').style.display='none';
   if(page==='invoices')document.getElementById('inv-dot').style.display='none';
+  if(page==='projects')renderProjects();
   closeSidebar();
 }
 
@@ -237,6 +238,96 @@ function showProjectSwitcher(){if(!currentUser.isAdmin)return;const next=current
 function renderAll(){renderDashboard();renderMessages();renderTasks('all');renderTimeline();renderBudget();renderInvoices();renderPhotos('all');renderDocuments();renderAgreement();}
 
 function fmt(n){if(!n&&n!==0)return'—';return'$'+Number(n).toLocaleString('en-US',{minimumFractionDigits:n%1!==0?2:0,maximumFractionDigits:2});}
+
+function renderProjects(){
+  const allProjects = Object.values(PROJECTS);
+  const statusColors = {
+    lead:'var(--blue-dim)',
+    estimate:'rgba(120,80,160,0.15)',
+    agreement:'var(--gold-dim)',
+    wip:'rgba(74,148,100,0.12)',
+    complete:'rgba(255,255,255,0.05)',
+    'In Progress — Near Completion':'rgba(74,148,100,0.12)',
+    'In Progress':'var(--gold-dim)'
+  };
+  const statusText = {
+    lead:'Lead',estimate:'Estimate Sent',agreement:'Agreement',
+    wip:'Work in Progress',complete:'Complete',
+    'In Progress — Near Completion':'In Progress',
+    'In Progress':'In Progress'
+  };
+  const statusTextColors = {
+    lead:'#7aafd0',estimate:'#b090e0',agreement:'var(--gold)',
+    wip:'#6dbf8a',complete:'var(--muted)',
+    'In Progress — Near Completion':'#6dbf8a',
+    'In Progress':'var(--gold)'
+  };
+
+  const container = document.getElementById('page-projects');
+  if(!container) return;
+
+  const cards = allProjects.map(p => {
+    const paid = p.budget.reduce((s,r)=>s+(r.paid||0),0);
+    const fee = paid*(p.overheadPct+p.profitPct) + p.reimbursables.reduce((s,r)=>s+r.amount,0);
+    const done = p.timeline.filter(t=>t.status==='done').length;
+    const pct = Math.round(done/p.timeline.length*100);
+    const statusKey = p.status;
+    const bg = statusColors[statusKey] || 'var(--gold-dim)';
+    const sc = statusTextColors[statusKey] || 'var(--gold)';
+    const st = statusText[statusKey] || statusKey;
+    const openTasks = p.tasks.filter(t=>!t.done).length;
+    const pendingInv = p.pendingInvoices.length;
+
+    return `<div class="invoice-item" style="cursor:pointer;margin-bottom:14px;" onclick="loadProject(PROJECTS['${p.id}']);goTo('dashboard',null);">
+      <div class="inv-top">
+        <div style="flex:1;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+            <span style="padding:3px 10px;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;background:${bg};color:${sc};border-radius:20px;">${st}</span>
+            ${pendingInv ? `<span style="padding:3px 10px;font-size:9px;background:var(--red-dim);color:#d08080;border-radius:20px;">⚠ ${pendingInv} pending approval</span>` : ''}
+          </div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--white);margin-bottom:2px;">${p.name}</div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:2px;">${p.address}</div>
+          <div style="font-size:11px;color:var(--muted2);">${p.type}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div style="font-size:9px;color:var(--muted);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:3px;">Project Revenue</div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:24px;color:var(--white);">${fmt(paid)}</div>
+          <div style="font-size:10px;color:var(--gold);margin-top:2px;">SAM Fee: ${fmt(fee)}</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;margin-top:12px;">
+        <div class="prog-bar" style="flex:1;"><div class="prog-fill" style="width:${pct}%"></div></div>
+        <span style="font-size:10px;color:var(--muted);flex-shrink:0;">${pct}% complete</span>
+        ${openTasks > 0 ? `<span style="font-size:10px;color:var(--muted2);flex-shrink:0;">${openTasks} open task${openTasks!==1?'s':''}</span>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+
+  container.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px;">
+      <div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:300;color:var(--white);">Projects</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px;">${allProjects.length} active project${allProjects.length!==1?'s':''}</div>
+      </div>
+      <button class="btn btn-gold" onclick="showToast('Coming Soon','New project creation coming next session.')">+ New Project</button>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
+      <button class="photo-type-btn active" onclick="filterProjects('all',this)">All Projects</button>
+      <button class="photo-type-btn" onclick="filterProjects('lead',this)">Leads</button>
+      <button class="photo-type-btn" onclick="filterProjects('wip',this)">Work in Progress</button>
+      <button class="photo-type-btn" onclick="filterProjects('complete',this)">Completed</button>
+    </div>
+
+    <div id="project-cards">${cards}</div>`;
+}
+
+function filterProjects(filter, btn){
+  document.querySelectorAll('#page-projects .photo-type-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  // For now show all — will filter by status once real status field is live
+  renderProjects();
+}
 
 function renderDashboard(){
   if(currentUser.isAdmin){
@@ -417,7 +508,49 @@ function renderTasks(filter){
   document.getElementById('task-badge').textContent=currentProject.tasks.filter(t=>!t.done).length;
 }
 
-function toggleTask(id){const t=currentProject.tasks.find(x=>x.id===id);if(t){t.done=!t.done;renderTasks(taskFilter);renderDashboard();}}
+function toggleTask(id){
+  const t=currentProject.tasks.find(x=>x.id===id);
+  if(!t)return;
+  if(t.done){
+    // Uncomplete — just toggle back, no note needed
+    t.done=false;
+    renderTasks(taskFilter);
+    renderDashboard();
+    return;
+  }
+  // Completing — open note modal
+  document.getElementById('complete-task-title').textContent=t.text;
+  document.getElementById('complete-task-date').value=new Date().toISOString().split('T')[0];
+  document.getElementById('complete-task-note').value='';
+  window._completingTaskId=id;
+  openModal('complete-task-modal');
+}
+
+function submitTaskComplete(){
+  const id=window._completingTaskId;
+  const t=currentProject.tasks.find(x=>x.id===id);
+  if(!t)return;
+  const note=document.getElementById('complete-task-note').value.trim();
+  const date=document.getElementById('complete-task-date').value;
+  if(!note){alert('Please add a completion note before marking as complete.');return;}
+  t.done=true;
+  t.completedNote=note;
+  t.completedDate=date;
+  closeModal('complete-task-modal');
+  renderTasks(taskFilter);
+  renderDashboard();
+  // Add to project activity log
+  const dateFormatted=new Date(date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  currentProject.messages.push({
+    from:'kevin',
+    text:'✓ Task completed: "'+t.text+'" — '+note,
+    time:dateFormatted,
+    av:currentUser.initials
+  });
+  showToast('Task Complete','Note saved to project activity log.');
+  // Save to Supabase
+  sb('tasks','PATCH',{done:true},{project_id:currentProject.id});
+}
 function filterTasks(f,btn){document.querySelectorAll('#page-tasks .tab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderTasks(f);}
 function openNewTask(){openModal('task-modal');}
 function createTask(){
