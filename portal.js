@@ -239,6 +239,11 @@ function renderAll(){renderDashboard();renderMessages();renderTasks('all');rende
 function fmt(n){if(!n&&n!==0)return'—';return'$'+Number(n).toLocaleString('en-US',{minimumFractionDigits:n%1!==0?2:0,maximumFractionDigits:2});}
 
 function renderDashboard(){
+  if(currentUser.isAdmin){
+    renderAdminDashboard();
+    return;
+  }
+  // Client dashboard
   const p=currentProject;
   const totalBudget=p.budget.reduce((s,r)=>s+(r.budget||0),0);
   const totalPaid=p.budget.reduce((s,r)=>s+(r.paid||0),0);
@@ -253,13 +258,138 @@ function renderDashboard(){
   const tlHtml=p.timeline.slice(0,5).map(t=>`<div class="tl-item"><div class="tl-dot ${t.status==='done'?'done':t.status==='current'?'current':''}"></div><div><div class="tl-name">${t.name}</div><div class="tl-date">${t.date}</div><span class="status-chip ${t.status==='done'?'chip-done':t.status==='current'?'chip-active':'chip-pending'}">${t.status==='done'?'Complete':t.status==='current'?'In Progress':'Upcoming'}</span></div></div>`).join('');
   document.getElementById('dash-timeline').innerHTML=`<div class="prog-wrap"><div class="prog-label"><span>Overall Progress</span><span>${Math.round(donePct*100)}% Complete</span></div><div class="prog-bar"><div class="prog-fill" style="width:${Math.round(donePct*100)}%"></div></div></div><div>${tlHtml}</div>`;
   const msgs=p.messages.slice(-3);
-  document.getElementById('dash-msgs').innerHTML=`<div class="msg-list">${msgs.map(m=>{const isMe=currentUser.isAdmin?m.from==='kevin':m.from!=='kevin';return`<div class="msg ${isMe?'mine':''}"><div class="msg-av">${m.av}</div><div><div class="msg-bubble">${m.text}</div><div class="msg-time">${m.time}</div></div></div>`;}).join('')}</div>`;
+  document.getElementById('dash-msgs').innerHTML=`<div class="msg-list">${msgs.map(m=>{const isMe=m.from!=='kevin';return`<div class="msg ${isMe?'mine':''}"><div class="msg-av">${m.av}</div><div><div class="msg-bubble">${m.text}</div><div class="msg-time">${m.time}</div></div></div>`;}).join('')}</div>`;
   const openTasks=p.tasks.filter(t=>!t.done).slice(0,3);
   document.getElementById('dash-tasks').innerHTML=openTasks.map(t=>`<div class="task-row"><div class="task-cb ${t.done?'done':''}" onclick="toggleTask(${t.id})">${t.done?'✓':''}</div><div><div class="task-text ${t.done?'done':''}">${t.text}</div><div><span class="tag tag-${t.assign}">${t.assign==='client'?'Client':t.assign==='sam'?'SAM':'Sub'}</span>${t.priority==='urgent'?'<span class="tag tag-urgent">Urgent</span>':''}<span style="font-size:10px;color:var(--muted);">Due ${t.due}</span></div></div></div>`).join('')||'<div class="empty"><div class="ei">☑</div><p>All tasks complete</p></div>';
-  document.getElementById('dash-activity').innerHTML=`<div class="task-row"><div style="font-size:18px;margin-right:4px;">💬</div><div><div style="font-size:12px;color:var(--text);">New message from ${p.messages[p.messages.length-1].av}</div><div style="font-size:10px;color:var(--muted);">${p.messages[p.messages.length-1].time}</div></div></div>${p.pendingInvoices.length?'<div class="task-row"><div style="font-size:18px;margin-right:4px;">📋</div><div><div style="font-size:12px;color:var(--gold);">Sub invoice pending your approval</div></div></div>':''}<div class="task-row"><div style="font-size:18px;margin-right:4px;">📸</div><div><div style="font-size:12px;color:var(--text);">New photos uploaded</div></div></div>`;
+  document.getElementById('dash-activity').innerHTML=`<div class="task-row"><div style="font-size:18px;margin-right:4px;">💬</div><div><div style="font-size:12px;color:var(--text);">New message from ${p.messages[p.messages.length-1].av}</div><div style="font-size:10px;color:var(--muted);">${p.messages[p.messages.length-1].time}</div></div></div>`;
 }
 
-// ── MESSAGES ──
+function renderAdminDashboard(){
+  const allProjects = Object.values(PROJECTS);
+  const allTasks = allProjects.flatMap(p=>p.tasks.filter(t=>!t.done));
+  const allPending = allProjects.flatMap(p=>p.pendingInvoices);
+
+  // Calculate YTD and MTD figures
+  const now = new Date();
+  const thisYear = now.getFullYear();
+  const thisMonth = now.getMonth();
+
+  // For demo data we use all paid invoices as YTD
+  // In production these will filter by created_at date
+  const allInvoices = allProjects.flatMap(p=>p.invoices);
+  const paidInvoices = allInvoices.filter(i=>i.status==='paid');
+
+  const ytdRevenue = allProjects.reduce((s,p)=>s+p.budget.reduce((s2,r)=>s2+(r.paid||0),0),0);
+  const ytdFees = allProjects.reduce((s,p)=>{
+    const paid=p.budget.reduce((s2,r)=>s2+(r.paid||0),0);
+    return s+paid*(p.overheadPct+p.profitPct)+p.reimbursables.reduce((s2,r)=>s2+r.amount,0);
+  },0);
+  const ytdCompleted = allProjects.filter(p=>p.status==='complete').length;
+
+  // MTD — using last 30 days of invoices as approximation for demo
+  // In production will filter by actual invoice dates
+  const mtdRevenue = ytdRevenue * 0.18; // Approximate current month portion
+  const mtdFees = ytdFees * 0.18;
+
+  // KPI rows
+  document.getElementById('kpi-row').innerHTML=`
+    <div class="kpi" style="grid-column:span 1;">
+      <div class="kpi-label" style="color:var(--gold);">YTD Fees Earned</div>
+      <div class="kpi-value">${fmt(ytdFees)}</div>
+      <div class="kpi-sub">Your consulting fee</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label" style="color:var(--gold);">YTD Project Revenue</div>
+      <div class="kpi-value">${fmt(ytdRevenue)}</div>
+      <div class="kpi-sub">Total costs consulted</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">This Month — Fees</div>
+      <div class="kpi-value" style="font-size:22px;">${fmt(mtdFees)}</div>
+      <div class="kpi-sub">${now.toLocaleString('default',{month:'long'})} ${thisYear}</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">This Month — Revenue</div>
+      <div class="kpi-value" style="font-size:22px;">${fmt(mtdRevenue)}</div>
+      <div class="kpi-sub">${allPending.length} invoice${allPending.length!==1?'s':''} pending approval</div>
+    </div>`;
+
+  // Projects overview
+  const projCards = allProjects.map(p=>{
+    const paid=p.budget.reduce((s,r)=>s+(r.paid||0),0);
+    const done=p.timeline.filter(t=>t.status==='done').length;
+    const pct=Math.round(done/p.timeline.length*100);
+    const fee=paid*(p.overheadPct+p.profitPct);
+    return `<div class="invoice-item" style="cursor:pointer;" onclick="loadProject(PROJECTS['${p.id}']);goTo('dashboard',null);">
+      <div class="inv-top">
+        <div>
+          <div class="inv-num">${p.type}</div>
+          <div class="inv-desc">${p.name}</div>
+          <div class="inv-sub-info">${p.address}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--white);">${fmt(paid)}</div>
+          <div style="font-size:10px;color:var(--muted);">paid · SAM fee ${fmt(fee)}</div>
+        </div>
+      </div>
+      <div class="prog-bar" style="margin-top:10px;"><div class="prog-fill" style="width:${pct}%"></div></div>
+      <div style="display:flex;justify-content:space-between;margin-top:6px;">
+        <span style="font-size:10px;color:var(--muted);">${pct}% complete · ${p.status}</span>
+        ${p.pendingInvoices.length?`<span style="font-size:10px;color:var(--gold);">⚠ ${p.pendingInvoices.length} pending approval</span>`:'<span style="font-size:10px;color:#6dbf8a;">✓ No pending items</span>'}
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('dash-timeline').innerHTML=`
+    <div style="margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;">
+      <div style="font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold);">Active Projects</div>
+      <button class="btn btn-gold btn-sm" onclick="showToast('Coming Soon','New project creation coming next session.')">+ New Project</button>
+    </div>
+    ${projCards}`;
+
+  // Pending approvals
+  const pendingHtml = allPending.length ? allPending.map(inv=>`
+    <div class="task-row">
+      <div style="font-size:18px;margin-right:4px;">📋</div>
+      <div style="flex:1;">
+        <div style="font-size:12px;color:var(--gold);">${inv.desc}</div>
+        <div style="font-size:10px;color:var(--muted);">${inv.sub} · ${fmt(inv.amount)}</div>
+      </div>
+      <button class="btn btn-green btn-sm" onclick="openApproveModal('${inv.id}','${fmt(inv.amount)}','${inv.desc}')">Approve</button>
+    </div>`).join('') : '<div style="font-size:12px;color:var(--muted);padding:8px 0;">No invoices pending approval</div>';
+
+  document.getElementById('dash-activity').innerHTML=`
+    <div style="font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold);margin-bottom:12px;">Pending Approvals</div>
+    ${pendingHtml}`;
+
+  // All open tasks
+  const taskHtml = allTasks.slice(0,5).map(t=>`
+    <div class="task-row">
+      <div class="task-cb" onclick="toggleTask(${t.id})"></div>
+      <div>
+        <div class="task-text">${t.text}</div>
+        <div><span class="tag tag-${t.assign}">${t.assign==='client'?'Client':t.assign==='sam'?'SAM':'Sub'}</span>${t.priority==='urgent'?'<span class="tag tag-urgent">Urgent</span>':''}</div>
+      </div>
+    </div>`).join('') || '<div class="empty"><div class="ei">☑</div><p>All tasks complete</p></div>';
+
+  document.getElementById('dash-tasks').innerHTML=taskHtml;
+
+  // Recent messages across all projects
+  const allMsgs = allProjects.flatMap(p=>p.messages.slice(-2).map(m=>({...m,project:p.name})));
+  document.getElementById('dash-msgs').innerHTML=`<div class="msg-list">${allMsgs.slice(-4).map(m=>`
+    <div class="msg">
+      <div class="msg-av">${m.av}</div>
+      <div>
+        <div class="msg-bubble">${m.text}</div>
+        <div class="msg-time">${m.av} · ${m.project} · ${m.time}</div>
+      </div>
+    </div>`).join('')}</div>`;
+
+  document.getElementById('proj-name').textContent='All Projects';
+  document.getElementById('proj-status').textContent=`${allProjects.length} active`;
+}
+
+
 function renderMessages(){
   const p=currentProject;
   document.getElementById('msg-thread').innerHTML=`<div class="msg-list">${p.messages.map(m=>{const isMe=currentUser.isAdmin?m.from==='kevin':m.from!=='kevin';return`<div class="msg ${isMe?'mine':''}"><div class="msg-av">${m.av}</div><div><div class="msg-bubble">${m.text}</div><div class="msg-time">${m.av} · ${m.time}</div></div></div>`;}).join('')}</div>`;
