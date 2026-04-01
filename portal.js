@@ -1,6 +1,25 @@
-(function() {
+const SUPABASE_URL = 'https://eqpnlkbugolvdfkvicej.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_BTJ9VMuJP6h4LC7jpG_k2g_7PNhABhP';
+
+// Supabase helper
+async function sb(table, method='GET', body=null, filters='') {
+  const url = `${SUPABASE_URL}/rest/v1/${table}${filters}`;
+  const headers = {
+    'apikey': SUPABASE_KEY,
+    'Authorization': `Bearer ${SUPABASE_KEY}`,
+    'Content-Type': 'application/json',
+    'Prefer': method === 'POST' ? 'return=representation' : ''
+  };
+  const res = await fetch(url, { method, headers, body: body ? JSON.stringify(body) : null });
+  if (!res.ok) { const e = await res.text(); console.error('Supabase error:', e); return null; }
+  if (method === 'DELETE') return true;
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
+
 const stripe = Stripe('pk_live_51Sz0bXERxTMJI9mnTsJdmBr1SCxSM8yWVJIDDFyZju38YuQsQ25bBWiGnQ6m4UeaMxHbbG2txpXiLoNmavsEDDCc007YEuzCxX');
 
+// ── DEMO DATA (fallback while DB populates) ──
 const PROJECTS = {
   biggs: {
     id:'biggs', name:'Biggs Residence', address:'5156 Piazza Place, El Dorado Hills, CA 95762',
@@ -45,13 +64,10 @@ const PROJECTS = {
       {id:'SUB-001',desc:'Hardwood Flooring Installation',sub:'Western Floors Co.',amount:8400,status:'pending-approval',date:'Mar 24, 2026'}
     ],
     messages:[
-      {from:'kevin',text:'Jeff & Regina — welcome to your SAM Custom Homes project portal! Everything about your project lives here.',time:'Oct 14, 2025',av:'KM'},
+      {from:'kevin',text:'Jeff & Regina — welcome to your SAM Custom Homes project portal!',time:'Oct 14, 2025',av:'KM'},
       {from:'jeff',text:'This is great Kevin, really appreciate the transparency.',time:'Oct 14, 2025',av:'JB'},
-      {from:'kevin',text:'Cabinet delivery confirmed for Jan 8th. Crew starts installation Jan 10th.',time:'Jan 5, 2026',av:'KM'},
-      {from:'regina',text:'Perfect. Should we be there for the delivery?',time:'Jan 5, 2026',av:'RB'},
-      {from:'kevin',text:'Not necessary but you\'re welcome to come by. I\'ll be on site Jan 10th.',time:'Jan 5, 2026',av:'KM'},
       {from:'kevin',text:'Hardwood flooring material arrived and looks beautiful. Installation crew starts Monday.',time:'Mar 20, 2026',av:'KM'},
-      {from:'jeff',text:'Excellent! Sent some inspiration photos for the kitchen island lighting — check the Photos tab.',time:'Mar 21, 2026',av:'JB'}
+      {from:'jeff',text:'Excellent! Sent some inspiration photos for the kitchen island lighting.',time:'Mar 21, 2026',av:'JB'}
     ],
     tasks:[
       {id:1,text:'Select final lighting fixtures for kitchen island',assign:'client',priority:'normal',done:false,due:'Apr 1, 2026'},
@@ -66,13 +82,11 @@ const PROJECTS = {
       {type:'progress',label:'Cabinets Installed',icon:'🪵'},
       {type:'progress',label:'Hardwood Material Delivered',icon:'📦'},
       {type:'inspiration',label:'Island Lighting Inspiration',icon:'💡'},
-      {type:'inspiration',label:'Hardware Finish Idea',icon:'🎨'},
       {type:'completion',label:'Paint — Complete',icon:'🖌️'}
     ],
     docs:[
       {name:'Original Budget — Oct 14, 2025',type:'xlsx',date:'Oct 14, 2025',icon:'📊'},
-      {name:'Invoice INV-BIGGS-001',type:'pdf',date:'Mar 9, 2026',icon:'📄'},
-      {name:'Ferguson Appliances Quote',type:'pdf',date:'Dec 2025',icon:'📄'}
+      {name:'Invoice INV-BIGGS-001',type:'pdf',date:'Mar 9, 2026',icon:'📄'}
     ]
   },
   gibson: {
@@ -106,7 +120,7 @@ const PROJECTS = {
       {desc:'Painting — Interior',budget:10835,paid:0},
       {desc:'Cabinets — Kitchen/Island/Bev Center',budget:35500,paid:17750},
       {desc:'Countertops / Solid Surfaces / Backsplash',budget:14500,paid:0},
-      {desc:'Electrical Trim & Fixtures (TBD)',budget:4500,paid:0},
+      {desc:'Electrical Trim & Fixtures',budget:4500,paid:0},
       {desc:'Appliances — Fridge, Bev & Wine',budget:6500,paid:0},
       {desc:'Finish Plumbing — Sinks, Toilet, Faucets',budget:3500,paid:0},
       {desc:'Cleaning — Intermediate & Final',budget:600,paid:0},
@@ -119,12 +133,9 @@ const PROJECTS = {
     ],
     pendingInvoices:[],
     messages:[
-      {from:'kevin',text:'John — your project portal is live! Budget, timeline, and all communications will be tracked here.',time:'Nov 13, 2025',av:'KM'},
+      {from:'kevin',text:'John — your project portal is live! Everything will be tracked here.',time:'Nov 13, 2025',av:'KM'},
       {from:'john',text:'Great setup Kevin. Really like being able to see everything in one place.',time:'Nov 13, 2025',av:'JG'},
-      {from:'kevin',text:'Demo went smoothly. Site is clean and ready for rough work next week.',time:'Nov 20, 2025',av:'KM'},
-      {from:'kevin',text:'Cabinet order placed with Elite Cabinetry. Estimated delivery April 2nd. Deposit invoice coming.',time:'Feb 28, 2026',av:'KM'},
-      {from:'john',text:'Sounds good. Will the portal notify me when the invoice is ready?',time:'Feb 28, 2026',av:'JG'},
-      {from:'kevin',text:'Yes — you\'ll get a text and email the moment it\'s ready to pay.',time:'Feb 28, 2026',av:'KM'}
+      {from:'kevin',text:'Cabinet order placed with Elite Cabinetry. Deposit invoice coming.',time:'Feb 28, 2026',av:'KM'}
     ],
     tasks:[
       {id:1,text:'Approve cabinet deposit invoice INV-GIB-002',assign:'client',priority:'urgent',done:false,due:'Mar 28, 2026'},
@@ -135,15 +146,12 @@ const PROJECTS = {
       {type:'before',label:'Kitchen — Before',icon:'🏚️'},
       {type:'before',label:'Living Area — Before',icon:'🏠'},
       {type:'progress',label:'Demo — Day 1',icon:'🔨'},
-      {type:'progress',label:'Rough Plumbing Complete',icon:'🔧'},
-      {type:'inspiration',label:'Kitchen Design Inspiration',icon:'✨'},
-      {type:'inspiration',label:'Cabinet Style Reference',icon:'🪵'}
+      {type:'inspiration',label:'Kitchen Design Inspiration',icon:'✨'}
     ],
     docs:[
       {name:'Budget — Nov 13, 2025',type:'xlsx',date:'Nov 13, 2025',icon:'📊'},
       {name:'Invoice INV-GIB-001',type:'pdf',date:'Dec 15, 2025',icon:'📄'},
-      {name:'Invoice INV-GIB-002',type:'pdf',date:'Mar 1, 2026',icon:'📄'},
-      {name:'Elite Cabinetry Order Confirmation',type:'pdf',date:'Feb 28, 2026',icon:'📄'}
+      {name:'Invoice INV-GIB-002',type:'pdf',date:'Mar 1, 2026',icon:'📄'}
     ]
   }
 };
@@ -158,10 +166,11 @@ const USERS = {
 let currentUser=null, currentProject=null, taskFilter='all', pendingInvoiceId=null;
 let currentPayAmount=0, sigDrawing=false, sigHasMark=false, sigCtx=null;
 
+// ── AUTH ──
 function quickLogin(role){
   const map={kevin:'kevin@samcustomhomes.com',biggs:'jeffrey.biggs@gmail.com',gibson:'jgibson43@yahoo.com'};
   document.getElementById('li-email').value=map[role];
-  document.getElementById('li-pass').value='••••••••';
+  document.getElementById('li-pass').value='demo1234';
 }
 
 function doLogin(){
@@ -207,6 +216,7 @@ function doLogout(){
   document.getElementById('li-pass').value='';
 }
 
+// ── NAV ──
 function goTo(page,el){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
@@ -226,7 +236,7 @@ function showProjectSwitcher(){if(!currentUser.isAdmin)return;const next=current
 
 function renderAll(){renderDashboard();renderMessages();renderTasks('all');renderTimeline();renderBudget();renderInvoices();renderPhotos('all');renderDocuments();renderAgreement();}
 
-function fmt(n){if(!n&&n!==0)return '—';return '$'+Number(n).toLocaleString('en-US',{minimumFractionDigits:n%1!==0?2:0,maximumFractionDigits:2});}
+function fmt(n){if(!n&&n!==0)return'—';return'$'+Number(n).toLocaleString('en-US',{minimumFractionDigits:n%1!==0?2:0,maximumFractionDigits:2});}
 
 function renderDashboard(){
   const p=currentProject;
@@ -246,9 +256,10 @@ function renderDashboard(){
   document.getElementById('dash-msgs').innerHTML=`<div class="msg-list">${msgs.map(m=>{const isMe=currentUser.isAdmin?m.from==='kevin':m.from!=='kevin';return`<div class="msg ${isMe?'mine':''}"><div class="msg-av">${m.av}</div><div><div class="msg-bubble">${m.text}</div><div class="msg-time">${m.time}</div></div></div>`;}).join('')}</div>`;
   const openTasks=p.tasks.filter(t=>!t.done).slice(0,3);
   document.getElementById('dash-tasks').innerHTML=openTasks.map(t=>`<div class="task-row"><div class="task-cb ${t.done?'done':''}" onclick="toggleTask(${t.id})">${t.done?'✓':''}</div><div><div class="task-text ${t.done?'done':''}">${t.text}</div><div><span class="tag tag-${t.assign}">${t.assign==='client'?'Client':t.assign==='sam'?'SAM':'Sub'}</span>${t.priority==='urgent'?'<span class="tag tag-urgent">Urgent</span>':''}<span style="font-size:10px;color:var(--muted);">Due ${t.due}</span></div></div></div>`).join('')||'<div class="empty"><div class="ei">☑</div><p>All tasks complete</p></div>';
-  document.getElementById('dash-activity').innerHTML=`<div class="task-row"><div style="font-size:18px;margin-right:4px;">💬</div><div><div style="font-size:12px;color:var(--text);">New message from ${p.messages[p.messages.length-1].av}</div><div style="font-size:10px;color:var(--muted);">${p.messages[p.messages.length-1].time}</div></div></div>${p.pendingInvoices.length?'<div class="task-row"><div style="font-size:18px;margin-right:4px;">📋</div><div><div style="font-size:12px;color:var(--gold);">Sub invoice pending your approval</div><div style="font-size:10px;color:var(--muted);">Requires review before client notification</div></div></div>':''}<div class="task-row"><div style="font-size:18px;margin-right:4px;">📸</div><div><div style="font-size:12px;color:var(--text);">New photos uploaded</div><div style="font-size:10px;color:var(--muted);">Progress update</div></div></div>`;
+  document.getElementById('dash-activity').innerHTML=`<div class="task-row"><div style="font-size:18px;margin-right:4px;">💬</div><div><div style="font-size:12px;color:var(--text);">New message from ${p.messages[p.messages.length-1].av}</div><div style="font-size:10px;color:var(--muted);">${p.messages[p.messages.length-1].time}</div></div></div>${p.pendingInvoices.length?'<div class="task-row"><div style="font-size:18px;margin-right:4px;">📋</div><div><div style="font-size:12px;color:var(--gold);">Sub invoice pending your approval</div></div></div>':''}<div class="task-row"><div style="font-size:18px;margin-right:4px;">📸</div><div><div style="font-size:12px;color:var(--text);">New photos uploaded</div></div></div>`;
 }
 
+// ── MESSAGES ──
 function renderMessages(){
   const p=currentProject;
   document.getElementById('msg-thread').innerHTML=`<div class="msg-list">${p.messages.map(m=>{const isMe=currentUser.isAdmin?m.from==='kevin':m.from!=='kevin';return`<div class="msg ${isMe?'mine':''}"><div class="msg-av">${m.av}</div><div><div class="msg-bubble">${m.text}</div><div class="msg-time">${m.av} · ${m.time}</div></div></div>`;}).join('')}</div>`;
@@ -262,10 +273,13 @@ function sendMsg(){
   currentProject.messages.push({from:currentUser.isAdmin?'kevin':'client',text,time:'Just now',av:currentUser.initials});
   renderMessages();
   input.value='';
+  // Save to Supabase
+  sb('messages','POST',{project_id:currentProject.id,text,created_at:new Date().toISOString()});
 }
 
 function msgKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();}}
 
+// ── TASKS ──
 function renderTasks(filter){
   taskFilter=filter;
   const filtered=currentProject.tasks.filter(t=>filter==='all'||t.assign===filter);
@@ -279,12 +293,15 @@ function openNewTask(){openModal('task-modal');}
 function createTask(){
   const text=document.getElementById('new-task-text').value.trim();
   if(!text)return;
-  currentProject.tasks.push({id:Date.now(),text,assign:document.getElementById('new-task-assign').value,priority:document.getElementById('new-task-priority').value,done:false,due:document.getElementById('new-task-due').value||'TBD'});
+  const task={id:Date.now(),text,assign:document.getElementById('new-task-assign').value,priority:document.getElementById('new-task-priority').value,done:false,due:document.getElementById('new-task-due').value||'TBD'};
+  currentProject.tasks.push(task);
   closeModal('task-modal');
   renderTasks(taskFilter);
   document.getElementById('new-task-text').value='';
+  sb('tasks','POST',{project_id:currentProject.id,text:task.text,assigned_to:task.assign,priority:task.priority,due_date:task.due});
 }
 
+// ── TIMELINE ──
 function renderTimeline(){
   const p=currentProject;
   const done=p.timeline.filter(t=>t.status==='done').length;
@@ -292,6 +309,7 @@ function renderTimeline(){
   document.getElementById('full-timeline').innerHTML=`<div class="prog-wrap" style="margin-bottom:24px;"><div class="prog-label"><span>Overall Progress</span><span>${pct}% — Phase ${done} of ${p.timeline.length}</span></div><div class="prog-bar"><div class="prog-fill" style="width:${pct}%"></div></div></div><div>${p.timeline.map((t,i)=>`<div class="tl-item"><div class="tl-dot ${t.status==='done'?'done':t.status==='current'?'current':''}"></div><div><div class="tl-name" style="font-size:14px;">${i+1}. ${t.name}</div><div class="tl-date">${t.date}</div><span class="status-chip ${t.status==='done'?'chip-done':t.status==='current'?'chip-active':'chip-pending'}">${t.status==='done'?'Complete':t.status==='current'?'In Progress':'Upcoming'}</span>${t.note?`<div style="font-size:11px;color:var(--muted);margin-top:5px;">${t.note}</div>`:''}</div></div>`).join('')}</div>`;
 }
 
+// ── BUDGET ──
 function renderBudget(){
   const p=currentProject;
   const rows=p.budget.filter(r=>r.budget>0||r.paid>0);
@@ -305,6 +323,7 @@ function renderBudget(){
   document.getElementById('budget-rows').innerHTML=rows.map(r=>{const bal=(r.budget||0)-(r.paid||0);const oh=r.paid*p.overheadPct;const pr=r.paid*p.profitPct;const over=r.budget>0&&r.paid>r.budget;return`<tr ${over?'style="background:rgba(154,48,48,0.05)"':''}><td>${r.desc}${over?'<span style="font-size:9px;color:#d08080;margin-left:6px;">▲ Over budget</span>':''}</td><td class="amt">${r.budget>0?fmt(r.budget):'—'}</td><td class="amt ${r.paid>0?'amt-gold':''}">${r.paid>0?fmt(r.paid):'—'}</td><td class="amt">${r.budget>0?fmt(bal):'—'}</td><td class="amt" style="font-size:12px;">${r.paid>0?fmt(oh):'—'}</td><td class="amt" style="font-size:12px;">${r.paid>0?fmt(pr):'—'}</td></tr>`;}).join('')+`<tr style="border-top:2px solid var(--border2);"><td style="font-weight:500;color:var(--white);">TOTALS</td><td class="amt amt-gold">${fmt(totalBudget)}</td><td class="amt amt-gold">${fmt(totalPaid)}</td><td class="amt">${fmt(totalBudget-totalPaid)}</td><td class="amt" style="color:#6dbf8a;">${fmt(totalOH)}</td><td class="amt" style="color:#6dbf8a;">${fmt(totalProfit)}</td></tr>${reimbTotal>0?`<tr><td colspan="6"><div class="reimbursable-note">+ Reimbursables: ${p.reimbursables.map(r=>r.desc+' — '+fmt(r.amount)).join(', ')} = ${fmt(reimbTotal)}</div></td></tr>`:''}`;
 }
 
+// ── INVOICES ──
 function renderInvoices(){
   const p=currentProject;
   let html='';
@@ -316,6 +335,7 @@ function renderInvoices(){
   document.getElementById('invoice-list').innerHTML=html;
 }
 
+// ── PHOTOS ──
 function renderPhotos(filter){
   const photos=filter==='all'?currentProject.photos:currentProject.photos.filter(ph=>ph.type===filter);
   const tagClass={before:'tag-before',after:'tag-after',progress:'tag-progress',inspiration:'tag-inspiration',concern:'tag-concern',completion:'tag-completion'};
@@ -324,14 +344,16 @@ function renderPhotos(filter){
 
 function filterPhotos(filter,btn){document.querySelectorAll('.photo-type-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderPhotos(filter);}
 
+// ── DOCUMENTS ──
 function renderDocuments(){
   document.getElementById('doc-list').innerHTML=`<div class="sec-title">Project Documents</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;">${currentProject.docs.map(d=>`<div style="padding:16px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;transition:border-color 0.2s;" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='var(--border)'"><div style="font-size:26px;margin-bottom:8px;">${d.icon}</div><div style="font-size:12px;color:var(--white);margin-bottom:3px;">${d.name}</div><div style="font-size:10px;color:var(--muted);">${d.type.toUpperCase()} · ${d.date}</div></div>`).join('')}</div>`;
 }
 
+// ── AGREEMENT ──
 function renderAgreement(){
   const p=currentProject;
   const clientName=p.id==='biggs'?'Jeff & Regina Biggs':'John Gibson';
-  document.getElementById('agreement-doc').innerHTML=`<h3>SAM Custom Homes, Inc. — Consulting Agreement</h3><p>This Agreement is between <strong>${clientName}</strong> ("Owner") and SAM Custom Homes, Inc., Lic# 1133051 ("Consultant"), 11409 White Rock Road, Rancho Cordova, CA 95742.</p><p><strong>Property:</strong> ${p.address}</p><p><strong>Project:</strong> ${p.type}</p><h4>Scope of Services</h4><p>Consultant shall provide construction consulting services including: project planning, scheduling, budgeting; coordinating with contractors and suppliers; permit coordination; progress reporting; quality monitoring; change order review; and periodic updates to Owner.</p><h4>Compensation</h4><p>Fee Type: <strong>Percentage of Costs</strong><br>Overhead: <strong>4%</strong> of all actual costs<br>Profit: <strong>4%</strong> of all actual costs<br>Change Order Rate: <strong>4% + 4%</strong><br>Retainer: <strong>$0</strong></p><h4>Payment Terms</h4><p>All invoices due upon receipt. Late payments accrue 10% monthly interest. All contracts with subcontractors and suppliers are directly between Owner and the applicable party. Consultant does not pay subcontractors.</p><h4>Limitations</h4><p>Consultant shall not provide design, engineering, or legal services, and shall not perform construction work or hire subcontractors.</p><h4>Term & Termination</h4><p>Effective upon signing. Either party may terminate upon 30 days written notice. All earned fees are due upon termination.</p><h4>Governing Law</h4><p>State of California. Date: March 26, 2026</p>`;
+  document.getElementById('agreement-doc').innerHTML=`<h3>SAM Custom Homes, Inc. — Consulting Agreement</h3><p>This Agreement is between <strong>${clientName}</strong> ("Owner") and SAM Custom Homes, Inc., Lic# 1133051 ("Consultant"), 11409 White Rock Road, Rancho Cordova, CA 95742.</p><p><strong>Property:</strong> ${p.address}</p><p><strong>Project:</strong> ${p.type}</p><h4>Scope of Services</h4><p>Consultant shall provide construction consulting services including: project planning, scheduling, budgeting; coordinating with contractors and suppliers; permit coordination; progress reporting; quality monitoring; change order review; and periodic updates to Owner.</p><h4>Compensation</h4><p>Fee Type: <strong>Percentage of Costs</strong><br>Overhead: <strong>4%</strong> of all actual costs<br>Profit: <strong>4%</strong> of all actual costs<br>Change Order Rate: <strong>4% + 4%</strong><br>Retainer: <strong>$0</strong></p><h4>Payment Terms</h4><p>All invoices due upon receipt. Late payments accrue 10% monthly interest. All contracts with subcontractors and suppliers are directly between Owner and the applicable party.</p><h4>Governing Law</h4><p>State of California. Date: March 26, 2026</p>`;
   setTimeout(()=>{
     const canvas=document.getElementById('sig-canvas');
     if(canvas&&!sigCtx){
@@ -359,6 +381,7 @@ function submitSig(){
   showToast('Agreement Signed','Signed electronically on '+d);
 }
 
+// ── PAYMENTS ──
 function openPayModal(amount,desc){
   currentPayAmount=parseFloat(amount.replace(/[$,]/g,''))||0;
   document.getElementById('pay-amount').textContent=amount;
@@ -400,8 +423,13 @@ function switchPayTab(tab,btn){
   updateFeeDisplay(tab);
 }
 
-function processPayment(){closeModal('pay-modal');showSuccess('Payment Submitted','Your payment has been received. A confirmation will be sent to your email.');simulateTwilio('Payment Received','SAM Custom Homes: Your payment has been received. Thank you — Kevin @ SAM Custom Homes');}
+function processPayment(){
+  closeModal('pay-modal');
+  showSuccess('Payment Submitted','Your payment has been received. A confirmation will be sent to your email.');
+  showToast('📱 Payment Received','SAM Custom Homes: Your payment has been received. Thank you — Kevin @ SAM Custom Homes');
+}
 
+// ── INVOICE APPROVAL ──
 function openApproveModal(id,amount,desc){
   pendingInvoiceId=id;
   document.getElementById('approve-amount').textContent=amount;
@@ -414,12 +442,12 @@ function approveInvoice(){
   const inv=currentProject.pendingInvoices.find(i=>i.id===pendingInvoiceId);
   if(inv){
     const opAmount=inv.amount*(currentProject.overheadPct+currentProject.profitPct);
-    currentProject.invoices.push({id:inv.id,desc:inv.desc,sub:inv.sub,amount:inv.amount,opAmount:opAmount,reimbursable:0,total:inv.amount+opAmount,status:'due',date:new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})});
+    currentProject.invoices.push({id:inv.id,desc:inv.desc,sub:inv.sub,amount:inv.amount,opAmount,reimbursable:0,total:inv.amount+opAmount,status:'due',date:new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})});
     currentProject.pendingInvoices=currentProject.pendingInvoices.filter(i=>i.id!==pendingInvoiceId);
   }
   renderInvoices();
   showSuccess('Invoice Approved','Client notified via text and email. Your consulting fee has been calculated automatically.');
-  simulateTwilio('Invoice Ready','SAM Custom Homes: A new invoice is ready for payment in your project portal.');
+  setTimeout(()=>showToast('📱 Invoice Ready','SAM Custom Homes: A new invoice is ready for payment in your project portal.'),1200);
 }
 
 function rejectInvoice(){closeModal('approve-modal');showToast('Invoice Rejected','The subcontractor has been notified to resubmit.');}
@@ -429,38 +457,19 @@ function uploadDoc(){showSuccess('Document Uploaded','Your document has been sav
 function openModal(id){document.getElementById(id).classList.add('open');}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 function showSuccess(title,body){document.getElementById('success-title').textContent=title;document.getElementById('success-body').textContent=body;document.getElementById('success-icon').textContent='✓';openModal('success-modal');}
-function simulateTwilio(title,msg){setTimeout(()=>showToast('📱 '+title,msg),1200);}
 function showToast(title,body){const t=document.getElementById('toast');document.getElementById('toast-title').textContent=title;document.getElementById('toast-body').textContent=body;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),4000);}
 
 document.getElementById('topbar-date').textContent=new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
 
-// Expose all functions globally
-window.quickLogin=quickLogin;
-window.doLogin=doLogin;
-window.doLogout=doLogout;
-window.goTo=goTo;
-window.toggleSidebar=toggleSidebar;
-window.closeSidebar=closeSidebar;
-window.sendMsg=sendMsg;
-window.msgKey=msgKey;
-window.filterTasks=filterTasks;
-window.toggleTask=toggleTask;
-window.openNewTask=openNewTask;
-window.createTask=createTask;
-window.openPayModal=openPayModal;
-window.updateFeeDisplay=updateFeeDisplay;
-window.switchPayTab=switchPayTab;
-window.processPayment=processPayment;
-window.openApproveModal=openApproveModal;
-window.approveInvoice=approveInvoice;
-window.rejectInvoice=rejectInvoice;
-window.filterPhotos=filterPhotos;
-window.uploadPhoto=uploadPhoto;
-window.uploadDoc=uploadDoc;
-window.clearSig=clearSig;
-window.submitSig=submitSig;
-window.openModal=openModal;
-window.closeModal=closeModal;
-window.showProjectSwitcher=showProjectSwitcher;
-window.openAddInvoice=openAddInvoice;
-})();
+// ── EVENT LISTENERS (no inline onclick needed) ──
+document.addEventListener('DOMContentLoaded',function(){
+  document.querySelectorAll('[data-login]').forEach(function(btn){
+    btn.addEventListener('click',function(){quickLogin(this.getAttribute('data-login'));});
+  });
+  var lb=document.getElementById('login-btn');
+  if(lb)lb.addEventListener('click',doLogin);
+  var lo=document.getElementById('logout-btn');
+  if(lo)lo.addEventListener('click',doLogout);
+  var lp=document.getElementById('li-pass');
+  if(lp)lp.addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
+});
