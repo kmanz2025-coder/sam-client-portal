@@ -69,8 +69,8 @@ window.uploadDoc=function(){showSuccess('Document Uploaded','Your document has b
 window.clearSig=function(){if(sigCtx){sigCtx.clearRect(0,0,900,90);sigHasMark=false;}};
 window.showProjectSwitcher=function(){};
 
-const SUPABASE_URL = 'https://eqpnlkbugolvdfkvicej.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_BTJ9VMuJP6h4LC7jpG_k2g_7PNhABhP';
+var SUPABASE_URL = 'https://eqpnlkbugolvdfkvicej.supabase.co';
+var SUPABASE_KEY = 'sb_publishable_BTJ9VMuJP6h4LC7jpG_k2g_7PNhABhP';
 
 // Supabase helper
 async function sb(table, method='GET', body=null, filters='') {
@@ -91,7 +91,7 @@ async function sb(table, method='GET', body=null, filters='') {
 const stripe = Stripe('pk_live_51Sz0bXERxTMJI9mnTsJdmBr1SCxSM8yWVJIDDFyZju38YuQsQ25bBWiGnQ6m4UeaMxHbbG2txpXiLoNmavsEDDCc007YEuzCxX');
 
 // ── DEMO DATA (fallback while DB populates) ──
-const PROJECTS = {
+var PROJECTS = {
   biggs: {
     id:'biggs', name:'Biggs Residence', address:'5156 Piazza Place, El Dorado Hills, CA 95762',
     type:'Downstairs Remodel', status:'Complete',
@@ -225,7 +225,7 @@ const PROJECTS = {
   }
 };
 
-const USERS = {
+var USERS = {
   kevin:{name:'Kevin Manzer',first:'Kevin',role:'SAM — Owner',initials:'KM',project:null,isAdmin:true},
   jeff_biggs:{name:'Jeff Biggs',first:'Jeff',role:'Client',initials:'JB',project:'biggs',phone:'408-891-1731',email:'jeffrey.biggs@gmail.com'},
   regina_biggs:{name:'Regina Biggs',first:'Regina',role:'Client',initials:'RB',project:'biggs',phone:'510-825-9942',email:'regina.biggs@nadel.com'},
