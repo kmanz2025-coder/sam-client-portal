@@ -331,7 +331,7 @@ function renderProjects(){
     const openTasks = p.tasks.filter(t=>!t.done).length;
     const pendingInv = p.pendingInvoices.length;
 
-    return `<div class="invoice-item" style="cursor:pointer;margin-bottom:14px;" onclick="loadProject(PROJECTS['${p.id}']);window.goTo('dashboard',document.querySelector('.nav-item[data-page=\'dashboard\']'));">
+    return `<div class="invoice-item" style="cursor:pointer;margin-bottom:14px;" data-project-id="${p.id}">
       <div class="inv-top">
         <div style="flex:1;">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
