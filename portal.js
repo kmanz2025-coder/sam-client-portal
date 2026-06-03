@@ -69,24 +69,8 @@ window.uploadDoc=function(){showSuccess('Document Uploaded','Your document has b
 window.clearSig=function(){if(sigCtx){sigCtx.clearRect(0,0,900,90);sigHasMark=false;}};
 window.showProjectSwitcher=function(){};
 
-var SUPABASE_URL = 'https://eqpnlkbugolvdfkvicej.supabase.co';
-var SUPABASE_KEY = 'sb_publishable_BTJ9VMuJP6h4LC7jpG_k2g_7PNhABhP';
 
 // Supabase helper
-async function sb(table, method='GET', body=null, filters='') {
-  const url = `${SUPABASE_URL}/rest/v1/${table}${filters}`;
-  const headers = {
-    'apikey': SUPABASE_KEY,
-    'Authorization': `Bearer ${SUPABASE_KEY}`,
-    'Content-Type': 'application/json',
-    'Prefer': method === 'POST' ? 'return=representation' : ''
-  };
-  const res = await fetch(url, { method, headers, body: body ? JSON.stringify(body) : null });
-  if (!res.ok) { const e = await res.text(); console.error('Supabase error:', e); return null; }
-  if (method === 'DELETE') return true;
-  const text = await res.text();
-  return text ? JSON.parse(text) : null;
-}
 
 const stripe = Stripe('pk_live_51Sz0bXERxTMJI9mnTsJdmBr1SCxSM8yWVJIDDFyZju38YuQsQ25bBWiGnQ6m4UeaMxHbbG2txpXiLoNmavsEDDCc007YEuzCxX');
 
@@ -564,7 +548,6 @@ function sendMsg(){
   renderMessages();
   input.value='';
   // Save to Supabase
-  sb('messages','POST',{project_id:currentProject.id,text,created_at:new Date().toISOString()});
 }
 
 function msgKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();}}
@@ -618,7 +601,6 @@ function submitTaskComplete(){
   });
   showToast('Task Complete','Note saved to project activity log.');
   // Save to Supabase
-  sb('tasks','PATCH',{done:true},{project_id:currentProject.id});
 }
 function filterTasks(f,btn){document.querySelectorAll('#page-tasks .tab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderTasks(f);}
 function openNewTask(){openModal('task-modal');}
@@ -630,7 +612,6 @@ function createTask(){
   closeModal('task-modal');
   renderTasks(taskFilter);
   document.getElementById('new-task-text').value='';
-  sb('tasks','POST',{project_id:currentProject.id,text:task.text,assigned_to:task.assign,priority:task.priority,due_date:task.due});
 }
 
 // ── TIMELINE ──
