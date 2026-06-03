@@ -331,7 +331,7 @@ function renderProjects(){
     const openTasks = p.tasks.filter(t=>!t.done).length;
     const pendingInv = p.pendingInvoices.length;
 
-    return `<div class="invoice-item" style="cursor:pointer;margin-bottom:14px;" onclick="loadProject(PROJECTS['${p.id}']);goTo('dashboard',document.querySelector('.nav-item[data-page=\'dashboard\']'));">
+    return `<div class="invoice-item" style="cursor:pointer;margin-bottom:14px;" onclick="loadProject(PROJECTS['${p.id}']);window.goTo('dashboard',document.querySelector('.nav-item[data-page=\'dashboard\']'));">
       <div class="inv-top">
         <div style="flex:1;">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
@@ -464,7 +464,7 @@ function renderAdminDashboard(){
     const done=p.timeline.filter(t=>t.status==='done').length;
     const pct=Math.round(done/p.timeline.length*100);
     const fee=paid*(p.overheadPct+p.profitPct);
-    return `<div class="invoice-item" style="cursor:pointer;" onclick="loadProject(PROJECTS['${p.id}']);goTo('dashboard',document.querySelector('.nav-item[data-page=\'dashboard\']'));">
+    return `<div class="invoice-item" style="cursor:pointer;" onclick="loadProject(PROJECTS['${p.id}']);window.goTo('dashboard',document.querySelector('.nav-item[data-page=\'dashboard\']'));">
       <div class="inv-top">
         <div>
           <div class="inv-num">${p.type}</div>
