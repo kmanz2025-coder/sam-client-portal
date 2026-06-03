@@ -1,3 +1,74 @@
+
+function viewPDF(b64){
+  var blob = b64toBlob(b64, 'application/pdf');
+  var url = URL.createObjectURL(blob);
+  window.open(url, '_blank');
+}
+
+function b64toBlob(b64, type){
+  var bytes = atob(b64);
+  var arr = new Uint8Array(bytes.length);
+  for(var i=0;i<bytes.length;i++) arr[i]=bytes.charCodeAt(i);
+  return new Blob([arr], {type:type});
+}
+
+// Immediate global assignments - must be first
+window.quickLogin = function(role){
+  var map={kevin:'kevin@samcustomhomes.com',biggs:'jeffrey.biggs@gmail.com',gibson:'jgibson43@yahoo.com'};
+  var e=document.getElementById('li-email');
+  var p=document.getElementById('li-pass');
+  if(e)e.value=map[role]||'';
+  if(p)p.value='demo1234';
+};
+window.doLogin = function(){
+  var email=(document.getElementById('li-email').value||'').toLowerCase();
+  var uid='kevin';
+  if(email.indexOf('jeffrey')>-1||email.indexOf('jeff')>-1)uid='jeff_biggs';
+  else if(email.indexOf('regina')>-1)uid='regina_biggs';
+  else if(email.indexOf('gibson')>-1||email.indexOf('john')>-1)uid='john_gibson';
+  loadApp(uid);
+};
+window.doLogout = function(){
+  document.getElementById('app').style.display='none';
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('li-email').value='';
+  document.getElementById('li-pass').value='';
+};
+window.goTo = function(page,el){
+  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
+  document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active');});
+  var pg=document.getElementById('page-'+page);
+  if(pg)pg.classList.add('active');
+  if(el)el.classList.add('active');
+  else{var ni=document.querySelector('.nav-item[data-page="'+page+'"]');if(ni)ni.classList.add('active');}
+  var titles={dashboard:'Dashboard',projects:'Projects',messages:'Messages',tasks:'Tasks',timeline:'Timeline',budget:'Budget & Scope',invoices:'Invoices & Payments',photos:'Photos',documents:'Documents',agreement:'Consulting Agreement'};
+  var pt=document.getElementById('page-title');if(pt)pt.textContent=titles[page]||page;
+  if(page==='messages'){var mb=document.getElementById('msg-badge');if(mb)mb.style.display='none';}
+  if(page==='invoices'){var id=document.getElementById('inv-dot');if(id)id.style.display='none';}
+  if(page==='projects')renderProjects();
+  closeSidebar();
+};
+window.toggleSidebar=function(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('sb-overlay').classList.toggle('open');};
+window.closeSidebar=function(){document.getElementById('sidebar').classList.remove('open');document.getElementById('sb-overlay').classList.remove('open');};
+window.closeModal=function(id){document.getElementById(id).classList.remove('open');};
+window.openModal=function(id){document.getElementById(id).classList.add('open');};
+window.sendMsg=function(){
+  var input=document.getElementById('msg-input');
+  var text=input.value.trim();
+  if(!text)return;
+  currentProject.messages.push({from:currentUser.isAdmin?'kevin':'client',text:text,time:'Just now',av:currentUser.initials});
+  renderMessages();
+  input.value='';
+};
+window.msgKey=function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();window.sendMsg();}};
+window.filterTasks=function(f,btn){document.querySelectorAll('#page-tasks .tab').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');renderTasks(f);};
+window.openNewTask=function(){openModal('task-modal');};
+window.filterPhotos=function(filter,btn){document.querySelectorAll('.photo-type-btn').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');renderPhotos(filter);};
+window.uploadPhoto=function(){showSuccess('Photo Uploaded','Your photo has been added to the project gallery.');};
+window.uploadDoc=function(){showSuccess('Document Uploaded','Your document has been saved successfully.');};
+window.clearSig=function(){if(sigCtx){sigCtx.clearRect(0,0,900,90);sigHasMark=false;}};
+window.showProjectSwitcher=function(){};
+
 const SUPABASE_URL = 'https://eqpnlkbugolvdfkvicej.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_BTJ9VMuJP6h4LC7jpG_k2g_7PNhABhP';
 
@@ -23,46 +94,54 @@ const stripe = Stripe('pk_live_51Sz0bXERxTMJI9mnTsJdmBr1SCxSM8yWVJIDDFyZju38YuQs
 const PROJECTS = {
   biggs: {
     id:'biggs', name:'Biggs Residence', address:'5156 Piazza Place, El Dorado Hills, CA 95762',
-    type:'Downstairs Remodel', status:'In Progress — Near Completion',
+    type:'Downstairs Remodel', status:'Complete',
     overheadPct:0.04, profitPct:0.04, clients:['jeff_biggs','regina_biggs'],
     timeline:[
       {name:'Demo & Disposal',date:'Oct 2025',status:'done'},
       {name:'Rough Plumbing & Electrical',date:'Nov 2025',status:'done'},
       {name:'Drywall & Paint',date:'Dec 2025',status:'done'},
       {name:'Cabinets & Countertops',date:'Jan–Feb 2026',status:'done'},
-      {name:'Hardwood Flooring',date:'Feb–Mar 2026',status:'current',note:'Material delivered, installation in progress'},
-      {name:'Appliances & Fixtures',date:'Apr 2026',status:'pending'},
-      {name:'Final Punch & Cleaning',date:'Apr 2026',status:'pending'}
+      {name:'Hardwood Flooring',date:'Feb–Mar 2026',status:'done'},
+      {name:'Appliances & Fixtures',date:'Apr 2026',status:'done'},
+      {name:'Final Punch & Cleaning',date:'Jun 2026',status:'done'}
     ],
     budget:[
       {desc:'Demo/Disposal of floors & cabinets',budget:16450,paid:16450},
       {desc:'Plumbing',budget:3200,paid:275},
       {desc:'Electrical pre-wire & partial trim',budget:5000,paid:10000},
       {desc:'Drywall repairs & texture',budget:0,paid:2500},
-      {desc:'Trim / Base / Crown',budget:6500,paid:0},
-      {desc:'Interior Paint',budget:15000,paid:7000},
-      {desc:'Cabinets',budget:58000,paid:55000},
-      {desc:'Bedrosian Slabs / Countertops',budget:14000,paid:10387.75},
-      {desc:'Hardwood Flooring material',budget:39700,paid:16943.69},
-      {desc:'Kitchen Appliances — Ferguson',budget:30000,paid:20972.22},
-      {desc:'Kitchen Plumbing — Ferguson',budget:0,paid:4763.53},
-      {desc:'Pottery Barn — Chandeliers & Sconces',budget:0,paid:5059.78},
+      {desc:'Trim / Base / Crown',budget:6500,paid:2069.17},
+      {desc:'Interior Paint',budget:15000,paid:11400},
+      {desc:'Cabinets — Material (partial)',budget:58000,paid:55000},
+      {desc:'Cabinet install - Oswald',budget:0,paid:5335},
+      {desc:'Bedrosian Slabs / Countertops',budget:14000,paid:10388},
+      {desc:'Hardwood Flooring material',budget:39700,paid:16944},
+      {desc:'Wood floor install',budget:0,paid:12952.68},
+      {desc:'Wood floor glue - Bostic',budget:0,paid:3050.40},
+      {desc:'Kitchen Appliances — Ferguson',budget:30000,paid:20972},
+      {desc:'Kitchen Plumbing — Ferguson',budget:0,paid:4764},
+      {desc:'Pottery Barn — Chandeliers & Sconces',budget:0,paid:2731},
+      {desc:'Pottery Barn — Sconces & Pendants',budget:0,paid:2329},
       {desc:'Steel door for office',budget:0,paid:1939},
-      {desc:'Ceiling fans',budget:0,paid:907.34},
+      {desc:'Low Volt - Newsound Smart Home',budget:0,paid:13813.10},
+      {desc:'Jaime Perez - Labor',budget:0,paid:7000},
+      {desc:'Stone fabrication and install',budget:0,paid:12247},
+      {desc:'Electrical - Remaining materials, labor & add ons',budget:0,paid:4365},
+      {desc:'Exterior paint',budget:0,paid:1600},
+      {desc:'Ceiling fans',budget:0,paid:907},
       {desc:'Pantry door — Wayfair',budget:0,paid:360},
       {desc:'Decorative Ceiling Beams',budget:3000,paid:0},
-      {desc:'Finish Plumbing Fixtures',budget:1500,paid:0},
+      {desc:'Finish Plumbing Fixtures',budget:1500,paid:1350},
       {desc:'Pantry Shelving',budget:2000,paid:0},
-      {desc:'Cleaning — Intermediate & Final',budget:1200,paid:0},
+      {desc:'Cleaning — Intermediate & Final',budget:1200,paid:895},
       {desc:'Punch Work & Misc. Labor',budget:2500,paid:0}
     ],
-    reimbursables:[{desc:'Lumens Exterior Lights x4 (Kevin paid)',amount:926.64}],
+    reimbursables:[{desc:'Lumens Exterior Lights x4 (Kevin paid)',amount:927}],
     invoices:[
-      {id:'INV-BIGGS-001',desc:'Phase 1–4 Draw — Costs Incurred',sub:'Various Subs & Suppliers',amount:153484.95,opAmount:12278,reimbursable:926.64,total:166689.59,status:'paid',date:'Mar 9, 2026',paidDate:'Mar 12, 2026'}
+      {id:'INV-BIGGS-001',desc:'Phase 1 Draw — Costs Incurred',sub:'Various Subs & Suppliers',amount:153485,opAmount:12278,reimbursable:927,total:13205,status:'paid',date:'Mar 9, 2026',paidDate:'Mar 12, 2026'},
+      {id:'INV-BIGGS-002',desc:'Phase 2 Draw — Completion Costs',sub:'Various Subs & Suppliers',amount:69077.35,opAmount:5526,reimbursable:2069.17,total:7595.17,status:'paid',date:'Jun 3, 2026',paidDate:'Jun 3, 2026'}
     ],
-    pendingInvoices:[
-      {id:'SUB-001',desc:'Hardwood Flooring Installation',sub:'Western Floors Co.',amount:8400,status:'pending-approval',date:'Mar 24, 2026'}
-    ],
+    pendingInvoices:[],
     messages:[
       {from:'kevin',text:'Jeff & Regina — welcome to your SAM Custom Homes project portal!',time:'Oct 14, 2025',av:'KM'},
       {from:'jeff',text:'This is great Kevin, really appreciate the transparency.',time:'Oct 14, 2025',av:'JB'},
@@ -70,10 +149,8 @@ const PROJECTS = {
       {from:'jeff',text:'Excellent! Sent some inspiration photos for the kitchen island lighting.',time:'Mar 21, 2026',av:'JB'}
     ],
     tasks:[
-      {id:1,text:'Select final lighting fixtures for kitchen island',assign:'client',priority:'normal',done:false,due:'Apr 1, 2026'},
-      {id:2,text:'Confirm appliance delivery schedule with Ferguson',assign:'sam',priority:'urgent',done:false,due:'Mar 30, 2026'},
-      {id:3,text:'Submit final flooring installation invoice',assign:'sub',priority:'normal',done:false,due:'Apr 5, 2026'},
-      {id:4,text:'Schedule final walkthrough',assign:'sam',priority:'normal',done:false,due:'Apr 15, 2026'}
+      {id:1,text:'Project complete — request client testimonial',assign:'sam',priority:'normal',done:false,due:'Jun 10, 2026'},
+      {id:2,text:'Confirm all invoices paid in full',assign:'sam',priority:'normal',done:false,due:'Jun 10, 2026'}
     ],
     photos:[
       {type:'before',label:'Kitchen — Before Demo',icon:'🏚️'},
@@ -338,7 +415,7 @@ function renderDashboard(){
   const p=currentProject;
   const totalBudget=p.budget.reduce((s,r)=>s+(r.budget||0),0);
   const totalPaid=p.budget.reduce((s,r)=>s+(r.paid||0),0);
-  const totalOP=totalPaid*(p.overheadPct+p.profitPct);
+  const reimbT=p.reimbursables.reduce((s,r)=>s+r.amount,0);const totalOP=Math.round((totalPaid+reimbT)*(p.overheadPct+p.profitPct));
   const reimbTotal=p.reimbursables.reduce((s,r)=>s+r.amount,0);
   const donePct=p.timeline.filter(t=>t.status==='done').length/p.timeline.length;
   document.getElementById('kpi-row').innerHTML=`
@@ -578,8 +655,8 @@ function renderBudget(){
   const rows=p.budget.filter(r=>r.budget>0||r.paid>0);
   const totalBudget=rows.reduce((s,r)=>s+(r.budget||0),0);
   const totalPaid=rows.reduce((s,r)=>s+(r.paid||0),0);
-  const totalOH=totalPaid*p.overheadPct;
-  const totalProfit=totalPaid*p.profitPct;
+  const totalOH=Math.floor((totalPaid+reimbTotal)*p.overheadPct);
+  const totalProfit=Math.floor((totalPaid+reimbTotal)*p.profitPct);
   const reimbTotal=p.reimbursables.reduce((s,r)=>s+r.amount,0);
   document.getElementById('budget-kpi').innerHTML=`<div class="bkpi"><div class="bkpi-amount">${fmt(totalBudget||totalPaid)}</div><div class="bkpi-label">Total Budget</div></div><div class="bkpi"><div class="bkpi-amount" style="color:var(--gold)">${fmt(totalPaid)}</div><div class="bkpi-label">Paid to Date</div></div><div class="bkpi"><div class="bkpi-amount" style="color:#6dbf8a">${fmt(totalOH+totalProfit+reimbTotal)}</div><div class="bkpi-label">SAM Consulting Fee</div></div>`;
   document.getElementById('op-row').innerHTML=`<div class="op-chip">Overhead 4% = ${fmt(totalOH)}</div><div class="op-chip">Profit 4% = ${fmt(totalProfit)}</div>${reimbTotal>0?`<div class="op-chip">Reimbursables: ${fmt(reimbTotal)}</div>`:''}<div class="op-chip" style="background:rgba(74,148,100,0.15);border-color:rgba(74,148,100,0.3);color:#6dbf8a;">Total Fee: ${fmt(totalOH+totalProfit+reimbTotal)}</div>`;
@@ -594,7 +671,7 @@ function renderInvoices(){
     html+=`<div style="margin-bottom:20px;"><div class="sec-title">⚠️ Pending Your Approval</div>${p.pendingInvoices.map(inv=>`<div class="invoice-item pending-approval"><div class="inv-top"><div><div class="inv-num">${inv.id}</div><div class="inv-desc">${inv.desc}</div><div class="inv-sub-info">Submitted by: ${inv.sub} · ${inv.date}</div></div><div class="inv-amount">${fmt(inv.amount)}</div></div><div class="inv-footer"><span class="pill pill-review">Awaiting Your Review</span><div style="display:flex;gap:8px;"><button class="btn btn-green btn-sm" onclick="openApproveModal('${inv.id}','${fmt(inv.amount)}','${inv.desc}')">Review & Approve</button></div></div></div>`).join('')}</div>`;
   }
   html+=`<div class="sec-title">Invoice History</div>`;
-  html+=[...p.invoices].reverse().map(inv=>`<div class="invoice-item"><div class="inv-top"><div><div class="inv-num">${inv.id}</div><div class="inv-desc">${inv.desc}</div><div class="inv-sub-info">${inv.date}${inv.paidDate?' · Paid '+inv.paidDate:''}</div></div><div><div class="inv-amount">${fmt(inv.total)}</div><div style="font-size:10px;color:var(--muted);text-align:right;margin-top:2px;">incl. SAM fee ${fmt(inv.opAmount)}</div></div></div><div class="inv-footer"><span class="pill pill-${inv.status}">${inv.status==='paid'?'Paid · '+inv.paidDate:inv.status==='due'?'Payment Due':'Pending'}</span><div style="display:flex;gap:8px;align-items:center;">${inv.status==='due'&&!currentUser.isAdmin?`<button class="btn btn-gold btn-sm" onclick="openPayModal('${fmt(inv.total)}','${inv.desc}')">Pay Now</button>`:''}<button class="btn btn-outline btn-sm">View PDF</button></div></div></div>`).join('');
+  html+=[...p.invoices].reverse().map(inv=>`<div class="invoice-item"><div class="inv-top"><div><div class="inv-num">${inv.id}</div><div class="inv-desc">${inv.desc}</div><div class="inv-sub-info">${inv.date}${inv.paidDate?' · Paid '+inv.paidDate:''}</div></div><div><div class="inv-amount">${fmt(inv.total)}</div><div style="font-size:10px;color:var(--muted);text-align:right;margin-top:2px;">incl. SAM fee ${fmt(inv.opAmount)}</div></div></div><div class="inv-footer"><span class="pill pill-${inv.status}">${inv.status==='paid'?'Paid · '+inv.paidDate:inv.status==='due'?'Payment Due':'Pending'}</span><div style="display:flex;gap:8px;align-items:center;">${inv.status==='due'&&!currentUser.isAdmin?`<button class="btn btn-gold btn-sm" onclick="openPayModal('${fmt(inv.total)}','${inv.desc}')">Pay Now</button>`:''}<button class="btn btn-outline btn-sm" onclick="inv.pdf?viewPDF(inv.pdf):showToast('No PDF','PDF not yet available.')">View PDF</button></div></div></div>`).join('');
   document.getElementById('invoice-list').innerHTML=html;
 }
 
