@@ -106,35 +106,27 @@ const PROJECTS = {
       {name:'Final Punch & Cleaning',date:'Jun 2026',status:'done'}
     ],
     budget:[
-      {desc:'Demo/Disposal of floors & cabinets',budget:16450,paid:16450},
+      {desc:'Demo/Disposal of floors and cabinets',budget:16450,paid:16450},
       {desc:'Plumbing',budget:3200,paid:275},
-      {desc:'Electrical pre-wire & partial trim',budget:5000,paid:10000},
-      {desc:'Drywall repairs & texture',budget:0,paid:2500},
       {desc:'Trim / Base / Crown',budget:6500,paid:2069.17},
-      {desc:'Interior Paint',budget:15000,paid:11400},
-      {desc:'Cabinets — Material (partial)',budget:58000,paid:55000},
-      {desc:'Cabinet install - Oswald',budget:0,paid:5335},
-      {desc:'Bedrosian Slabs / Countertops',budget:14000,paid:10388},
-      {desc:'Hardwood Flooring material',budget:39700,paid:16944},
-      {desc:'Wood floor install',budget:0,paid:12952.68},
-      {desc:'Wood floor glue - Bostic',budget:0,paid:3050.40},
-      {desc:'Kitchen Appliances — Ferguson',budget:30000,paid:20972},
-      {desc:'Kitchen Plumbing — Ferguson',budget:0,paid:4764},
-      {desc:'Pottery Barn — Chandeliers & Sconces',budget:0,paid:2731},
-      {desc:'Pottery Barn — Sconces & Pendants',budget:0,paid:2329},
-      {desc:'Steel door for office',budget:0,paid:1939},
-      {desc:'Low Volt - Newsound Smart Home',budget:0,paid:13813.10},
-      {desc:'Jaime Perez - Labor',budget:0,paid:7000},
-      {desc:'Stone fabrication and install',budget:0,paid:12247},
-      {desc:'Electrical - Remaining materials, labor & add ons',budget:0,paid:4365},
-      {desc:'Exterior paint',budget:0,paid:1600},
-      {desc:'Ceiling fans',budget:0,paid:907},
-      {desc:'Pantry door — Wayfair',budget:0,paid:360},
+      {desc:'Painting Interior / Exterior',budget:15000,paid:13000},
+      {desc:'Cabinets',budget:58000,paid:60335},
+      {desc:'Countertops / Solid Surfaces',budget:14000,paid:22635},
+      {desc:'Electrical Trim / Fixtures',budget:5000,paid:14365},
+      {desc:'Hardwood Flooring',budget:39700,paid:32947.08},
       {desc:'Decorative Ceiling Beams',budget:3000,paid:0},
-      {desc:'Finish Plumbing Fixtures',budget:1500,paid:1350},
+      {desc:'Appliances',budget:30000,paid:20972},
+      {desc:'Finish Plumbing Fixtures',budget:1500,paid:6114},
       {desc:'Pantry Shelving',budget:2000,paid:0},
-      {desc:'Cleaning — Intermediate & Final',budget:1200,paid:895},
-      {desc:'Punch Work & Misc. Labor',budget:2500,paid:0}
+      {desc:'Cleaning - Intermediate & Final',budget:1200,paid:895},
+      {desc:'Punch Work & Misc. Labor',budget:2500,paid:7000},
+      {desc:'Drywall repairs & texture',budget:0,paid:2500},
+      {desc:'Pottery Barn - Chandeliers & Sconces',budget:0,paid:2731},
+      {desc:'Pottery Barn - Sconces & Pendants',budget:0,paid:2329},
+      {desc:'Steel door for office',budget:0,paid:1939},
+      {desc:'Ceiling fans',budget:0,paid:907},
+      {desc:'Pantry door - Wayfair',budget:0,paid:360},
+      {desc:'Low Volt - Newsound Smart Home',budget:0,paid:13813.10}
     ],
     reimbursables:[{desc:'Lumens Exterior Lights x4 (Kevin paid)',amount:927}],
     invoices:[
@@ -355,7 +347,7 @@ function renderProjects(){
     const openTasks = p.tasks.filter(t=>!t.done).length;
     const pendingInv = p.pendingInvoices.length;
 
-    return `<div class="invoice-item" style="cursor:pointer;margin-bottom:14px;" onclick="loadProject(PROJECTS['${p.id}']);goTo('dashboard',null);">
+    return `<div class="invoice-item" style="cursor:pointer;margin-bottom:14px;" onclick="loadProject(PROJECTS['${p.id}']);goTo('dashboard',document.querySelector('.nav-item[data-page=\'dashboard\']'));">
       <div class="inv-top">
         <div style="flex:1;">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
@@ -488,7 +480,7 @@ function renderAdminDashboard(){
     const done=p.timeline.filter(t=>t.status==='done').length;
     const pct=Math.round(done/p.timeline.length*100);
     const fee=paid*(p.overheadPct+p.profitPct);
-    return `<div class="invoice-item" style="cursor:pointer;" onclick="loadProject(PROJECTS['${p.id}']);goTo('dashboard',null);">
+    return `<div class="invoice-item" style="cursor:pointer;" onclick="loadProject(PROJECTS['${p.id}']);goTo('dashboard',document.querySelector('.nav-item[data-page=\'dashboard\']'));">
       <div class="inv-top">
         <div>
           <div class="inv-num">${p.type}</div>
